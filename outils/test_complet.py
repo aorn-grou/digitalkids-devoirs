@@ -199,8 +199,16 @@ bad = (A.aujourdhui() - __import__("datetime").timedelta(days=(A.aujourdhui().we
 ok(pa.get(f"/animateur/presence?creneau={mer}&date={bad}").status_code == 302, "une date qui n'est pas un mercredi est refusée")
 mois = mer_dates[0][:7]
 rap = c.get(f"/animateur/presences?mois={mois}").get_data(as_text=True)
+rap = c.get(f"/animateur/presences?mois={mois}&vue=calendrier").get_data(as_text=True)
 ok("Rapport de présence" in rap and "Andry Rakoto" in rap and "Mercredi 14h-16h" in rap and 'class="cal"' in rap, "rapport de présence du mois (calendrier par élève)")
-ok("grille-presence" in c.get(f"/animateur/presences?mois={mois}&vue=tableau").get_data(as_text=True), "rapport de présence en tableau")
+ok("grille-presence" in c.get(f"/animateur/presences?mois={mois}&vue=tableau").get_data(as_text=True), "rapport de présence par cours")
+rm = c.get(f"/animateur/presences?mois={mois}").get_data(as_text=True)
+nb_jours = __import__("calendar").monthrange(int(mois[:4]), int(mois[5:]))[1]
+ok('id="rm-table"' in rm and rm.count('class="rm-ok') >= 2 and "Andry Rakoto" in rm, "tableau du mois : tous les élèves, ✓ vert")
+ok(f"<small>{'LMMJVSD'[__import__('datetime').date(int(mois[:4]), int(mois[5:]), nb_jours).weekday()]}</small>{nb_jours}</th>" in rm, f"tableau du mois : une colonne par jour (1 → {nb_jours})")
+ok('class="rm-ko"' in rm, "tableau du mois : ✗ rouge pour les absents")
+rq = c.get(f"/animateur/presences?mois={mois}&q=rakoto").get_data(as_text=True)
+ok("Andry Rakoto" in rq and "Be Rasoa" not in rq, "recherche par nom dans le rapport")
 ok('type="month"' not in rap and 'type="month"' not in c.get("/animateur/excel").get_data(as_text=True), "pas de champ « mois » (incompatible Safari / Mac)")
 pres = A.app.test_request_context(f"/?mois={mois}")
 with A.app.test_request_context("/"):
@@ -212,7 +220,7 @@ with A.app.test_request_context("/"):
     n_mois = sum(1 for d in mer_dates[:4] if d[:7] == mois)
     ok(lig["Andry Rakoto"]["presents"] == n_mois and lig["Andry Rakoto"]["taux"] == 100, f"Andry : présent {n_mois} fois ce mois, 100 %")
     ok(lig["Mamy"]["retards"] == n_mois and lig["Mamy"]["presents"] == n_mois, "un retard compte comme présent")
-ok("Andry" not in pb.get(f"/animateur/presences?mois={mois}").get_data(as_text=True), "Mme Lova ne voit pas le rapport de la classe A")
+ok("Andry" not in pb.get(f"/animateur/presences?mois={mois}").get_data(as_text=True) and "Andry" not in pb.get(f"/animateur/presences?mois={mois}&vue=calendrier").get_data(as_text=True), "Mme Lova ne voit pas le rapport de la classe A")
 r = c.get("/animateur/recherche?q=rakoto")
 ok(r.status_code == 302 and f"/animateur/eleve/{ids['Andry Rakoto']}" in r.headers["Location"], "recherche « rakoto » → fiche d'Andry directement")
 fx = c.get(r.headers["Location"]).get_data(as_text=True); ok("Calendrier de présence" in fx and "cal-j st-" in fx and "Devoirs en ligne" in fx, "la fiche élève montre le calendrier de présence et les notes")

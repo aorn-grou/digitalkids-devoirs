@@ -1198,9 +1198,39 @@ def rapport_presence():
     mois = request.args.get("mois") or aujourdhui().isoformat()[:7]
     if not re.fullmatch(r"\d{4}-\d{2}", mois):
         mois = aujourdhui().isoformat()[:7]
+    vue = request.args.get("vue") if request.args.get("vue") in ("calendrier", "tableau") else "mois"
+    q = request.args.get("q", "").strip()
+    if vue == "mois":
+        return render_template("rapport_presence.html", mois=mois, vue=vue, q=q, **rapport_mensuel(mois, q))
     pres = calcul_presences(creneaux_visibles(), mois)
-    vue = "tableau" if request.args.get("vue") == "tableau" else "calendrier"
-    return render_template("rapport_presence.html", pres=pres, mois=mois, vue=vue)
+    return render_template("rapport_presence.html", pres=pres, mois=mois, vue=vue, q=q)
+
+
+def rapport_mensuel(mois, q=""):
+    """Un seul tableau : tous les élèves × tous les jours du mois (✓ présent, ✗ absent)."""
+    a, m = map(int, mois.split("-"))
+    nb = calendar.monthrange(a, m)[1]
+    jours = [{"d": f"{a:04d}-{m:02d}-{j:02d}", "n": j, "js": datetime(a, m, j).weekday()} for j in range(1, nb + 1)]
+    noms_cr = {c["id"]: c for c in tous_creneaux()}
+    statuts = {}
+    for x in db().execute("SELECT eleve_id, date, statut FROM presences WHERE substr(date,1,7)=?", (mois,)):
+        statuts.setdefault(x["eleve_id"], {})[x["date"]] = x["statut"]
+    jours_faits = {x["date"] for x in db().execute("SELECT date FROM seances WHERE substr(date,1,7)=?", (mois,))}
+    cle = slug(q, 100) if q else ""
+    lignes = []
+    for e in db().execute("SELECT * FROM eleves ORDER BY lower(prenom)"):
+        if not visible(e["classe_id"]) or (not e["creneau_id"] and e["id"] not in statuts):
+            continue
+        if cle and cle not in slug(e["prenom"], 100):
+            continue
+        st = statuts.get(e["id"], {})
+        cr = noms_cr.get(e["creneau_id"])
+        cases = [{"st": st.get(j["d"], ""), "cours": bool(cr and cr["jour"] == j["js"])} for j in jours]
+        p = sum(1 for c in cases if c["st"] in ("P", "R"))
+        ab = sum(1 for c in cases if c["st"] == "A")
+        lignes.append({"e": e, "cr": cr, "cases": cases, "presents": p, "absents": ab, "taux": taux(p, ab), "cle": slug(e["prenom"], 100)})
+    lignes.sort(key=lambda l: ((l["cr"] or {}).get("classe", "~"), (l["cr"] or {}).get("jour", 9), (l["cr"] or {}).get("debut", ""), l["e"]["prenom"].lower()))
+    return {"jours": jours, "lignes": lignes, "jours_faits": jours_faits}
 
 
 # ------------------------------------------------------------------ recherche
