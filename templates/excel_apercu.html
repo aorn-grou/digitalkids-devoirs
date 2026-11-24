@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titre %}Aperçu de l'import · Digital Kids{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
+{% macro sel_col(nom, i, a, valeur, vide) %}<select name="{{ nom }}_{{ i }}" onchange="this.form.submit()"><option value="">{{ vide }}</option>{% for j in range(a.largeur) %}<option value="{{ j }}" {{ 'selected' if valeur == j }}>Colonne {{ lettre(j) }}{% if a.tete[j] not in (none, '') %} · {{ a.tete[j]|string|truncate(22) }}{% endif %}</option>{% endfor %}</select>{% endmacro %}
+{% block contenu %}
+<a class="aide" href="{{ url_for('excel') }}">← choisir un autre fichier</a>
+<h1 class="titre-page">Aperçu : {{ nom_fichier }}</h1>
+<p class="sous">Voici ce que le logiciel a compris. Vérifiez, corrigez si besoin, puis cliquez sur <b>Importer</b> en bas.</p>
+<form method="post" action="{{ url_for('excel_apercu') }}" id="f-apercu">
+<input type="hidden" name="f" value="{{ jeton }}"><input type="hidden" name="modif" value="1">
+{% for a, r in feuilles %}{% set i = loop.index0 %}
+<section class="carte feuille{{ ' off' if not r.importer }}">
+  <header class="feuille-tete">
+    <label class="interrupteur"><input type="checkbox" name="importer_{{ i }}" value="1" {{ 'checked' if r.importer }} onchange="this.form.submit()"><span></span></label>
+    <div style="flex:1;min-width:0"><h2>📄 Feuille « {{ a.titre }} »</h2>
+      <p class="aide" style="margin:0">{{ a.corps|length }} ligne(s) · {{ r.lignes|length }} élève(s) trouvé(s){% if a.dates %} · {{ a.dates|length }} date(s) de présence · {{ r.nb_pointages }} pointage(s){% endif %}</p></div>
+  </header>
+  {% if r.importer %}
+  <div class="reglages">
+    <label>👤 Nom de l'élève {{ sel_col('col_nom', i, a, r.col_nom, '— choisir —') }}</label>
+    <label>➕ Prénom (si séparé) {{ sel_col('col_prenom', i, a, r.col_prenom, 'aucun') }}</label>
+    <label>🎓 Niveau {{ sel_col('col_niv', i, a, r.col_niv, 'pas de colonne') }}
+      {% if r.col_niv is none %}<select name="niveau_{{ i }}" onchange="this.form.submit()"><option value="1" {{ 'selected' if r.niveau == 1 }}>tous en niveau 1</option><option value="2" {{ 'selected' if r.niveau == 2 }}>tous en niveau 2</option></select>{% else %}<input type="hidden" name="niveau_{{ i }}" value="{{ r.niveau }}">{% endif %}</label>
+    <label>📅 Cours (jour / heure / prof) {{ sel_col('col_cours', i, a, r.col_cours, 'pas de colonne') }}
+      <select name="cours_{{ i }}" onchange="this.form.submit()"><option value="">{{ 'cours de chaque ligne' if r.col_cours is not none else '— choisir le cours de la feuille —' }}</option>{% for c in crs %}<option value="{{ c.id }}" {{ 'selected' if r.cours and r.cours.id == c.id }}>{{ c.horaire }} · {{ c.nom }}</option>{% endfor %}</select></label>
+  </div>
+  {% if r.col_nom is none %}<div class="erreur">Choisissez la colonne qui contient les noms des élèves.</div>
+  {% elif r.sans_cours %}<div class="flash" style="animation:none">⚠ {{ r.sans_cours }} élève(s) sans cours reconnu : ils seront ajoutés « sans cours » (vous les placerez ensuite), et leurs présences ne seront pas enregistrées. Choisissez le cours de la feuille pour corriger.</div>{% endif %}
+  {% if r.lignes %}
+  <div class="defile" style="max-height:360px;overflow:auto"><table class="tableau-notes">
+    <thead><tr><th>#</th><th>Élève</th><th>Niveau</th><th>Cours</th>{% if a.dates %}<th>Présences lues</th>{% endif %}</tr></thead>
+    <tbody>{% for x in r.lignes[:200] %}<tr><td class="aide">{{ loop.index }}</td><td><b>{{ x.nom }}</b></td><td>{{ x.niveau }}</td>
+      <td>{% if x.cours %}{{ x.cours.horaire }} · {{ x.cours.nom }}{% else %}<span class="chip orange">sans cours</span>{% endif %}</td>
+      {% if a.dates %}<td><div class="pts-mini">{% for d, st in x.pointages %}<span class="pt-{{ st }}" title="{{ d|date_fr }}">{{ d[8:10] }}/{{ d[5:7] }} {{ {'P':'👍','R':'👍','A':'✗'}[st] }}</span>{% else %}<span class="aide">—</span>{% endfor %}</div></td>{% endif %}
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% if r.lignes|length > 200 %}<p class="aide">… et {{ r.lignes|length - 200 }} autre(s).</p>{% endif %}
+  {% endif %}
+  {% else %}<p class="aide" style="margin:6px 0 0">Cette feuille ne sera pas importée.</p>{% endif %}
+</section>
+{% endfor %}
+{% set total = feuilles|selectattr('1.importer')|map(attribute='1.lignes')|map('length')|sum %}
+<div class="import-barre">
+  <span><b>{{ total }}</b> élève(s) seront importés.</span>
+  <button class="btn" name="action" value="importer" {{ 'disabled' if not total }}>✅ Importer dans le logiciel</button>
+</div>
+</form>
+{% endblock %}

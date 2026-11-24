@@ -1,34 +1,53 @@
 {% extends "base.html" %}
 {% block titre %}Excel · Digital Kids{% endblock %}
-{% block ruban %}{% set actif = 'excel' %}{% include '_nav.html' %}{% endblock %}
 {% block qui %}{% include '_qui.html' %}{% endblock %}
 {% block contenu %}
-<h1 class="titre-page">Importer / exporter avec Excel</h1>
-<div class="grille-admin" style="margin-top:16px;align-items:start">
-  <form class="carte" method="get" action="{{ url_for('excel_presences') }}" style="display:grid;gap:10px">
-    <h2 style="color:var(--nuit)">⬇ Fiches de présence</h2>
-    <p class="aide" style="margin:0">Un fichier Excel avec <b>une feuille par cours</b> (ex. Classe A · Mercredi 14h-16h) : les élèves, les dates du mois, P / R / A, et les totaux.</p>
+<h1 class="titre-page">Excel → Digital Kids</h1>
+<p class="sous">Mettez <b>vos propres fichiers Excel</b> dans le logiciel : il reconnaît tout seul les noms, les niveaux, les cours et les présences.</p>
+
+{% if role == 'admin' %}
+<form class="carte depot" method="post" action="{{ url_for('excel_importer') }}" enctype="multipart/form-data" id="depot">
+  <div class="depot-zone" id="zone">
+    <div class="depot-ic">📥</div>
+    <h2>Déposez votre fichier Excel ici</h2>
+    <p class="aide" style="margin:0">ou</p>
+    <label class="btn bleu" for="fichier">Choisir le fichier sur l'ordinateur</label>
+    <input type="file" id="fichier" name="fichier" accept=".xlsx,.xlsm,.csv" required hidden onchange="this.form.submit();document.getElementById('zone').classList.add('envoi')">
+    <p class="aide" style="margin:0">Fichiers <b>.xlsx</b> (Excel) ou <b>.csv</b>. Toutes les feuilles du fichier sont lues.</p>
+    <div class="depot-envoi">⏳ Lecture du fichier…</div>
+  </div>
+  <div class="depot-exemples">
+    <b>Le logiciel comprend par exemple :</b>
+    <ul>
+      <li>une colonne <b>Nom</b> (ou <b>Nom</b> + <b>Prénom</b>, ou « Élève », « Anarana »)</li>
+      <li>une colonne <b>Niveau</b> (1 ou 2) — sinon vous choisissez le niveau</li>
+      <li>une colonne <b>Cours / Jour / Prof</b> (« Samedi 8h », « Toky mercredi ») — ou une feuille par cours</li>
+      <li>des colonnes de <b>dates</b> (04/11, 11/11…) avec <b>P</b>, <b>A</b>, <b>R</b>, ✓, x, 1, 0, présent, absent</li>
+    </ul>
+    <p class="aide" style="margin:0">Avant d'importer, vous voyez un <b>aperçu</b> et vous pouvez corriger les colonnes.</p>
+  </div>
+</form>
+{% endif %}
+
+<h2 style="margin:28px 0 10px;color:var(--bleu)">Télécharger depuis le logiciel</h2>
+<div class="grille-admin">
+  <form class="carte" method="get" action="{{ url_for('excel_presences') }}" style="display:grid;gap:10px;align-content:start">
+    <h2 style="color:var(--nuit);font-size:19px">⬇ Fiches de présence (Excel)</h2>
+    <p class="aide" style="margin:0">Une feuille par cours, avec P / R / A et les totaux. C'est aussi un bon modèle à remplir puis à redéposer ici.</p>
     {% if classe_choisie %}<input type="hidden" name="classe" value="{{ classe_choisie }}">{% endif %}
-    <label for="mois">Mois</label><select id="mois" name="mois">{% for v, t in liste_mois() %}<option value="{{ v }}" {{ 'selected' if v == mois }}>{{ t|capitalize }}</option>{% endfor %}</select>
-    <button class="btn bleu">Télécharger les présences</button>
+    <select id="mois" name="mois" aria-label="Mois">{% for v, t in liste_mois() %}<option value="{{ v }}" {{ 'selected' if v == mois }}>{{ t|capitalize }}</option>{% endfor %}</select>
+    <button class="btn petit gris">Télécharger les présences</button>
   </form>
   <div class="carte" style="display:grid;gap:10px;align-content:start">
-    <h2 style="color:var(--nuit)">⬇ Notes des devoirs</h2>
+    <h2 style="color:var(--nuit);font-size:19px">⬇ Notes des devoirs (Excel)</h2>
     <p class="aide" style="margin:0">Moyenne de chaque élève pour chaque devoir.</p>
-    <a class="btn bleu" href="{{ url_for('excel_notes', **({'classe': classe_choisie} if classe_choisie else {})) }}">Télécharger les notes</a>
+    <a class="btn petit gris" href="{{ url_for('excel_notes', **({'classe': classe_choisie} if classe_choisie else {})) }}">Télécharger les notes</a>
   </div>
-  {% if role == 'admin' %}
-  <form class="carte" method="post" action="{{ url_for('excel_importer') }}" enctype="multipart/form-data" style="display:grid;gap:10px">
-    <h2 style="color:var(--nuit)">⬆ Importer un fichier</h2>
-    <ol class="aide" style="margin:0;padding-left:18px;display:grid;gap:4px">
-      <li>Téléchargez les <b>fiches de présence</b> (à gauche) : c'est le modèle.</li>
-      <li>Dans Excel, écrivez les <b>noms des élèves</b> de chaque cours (une ligne par élève) et, si vous voulez, <b>P / R / A</b> sous les dates.</li>
-      <li>Enregistrez, puis choisissez le fichier ici.</li>
-    </ol>
-    <input type="file" name="fichier" accept=".xlsx" required aria-label="Fichier Excel">
-    <button class="btn">Importer</button>
-    <p class="aide" style="margin:0">Les nouveaux élèves reçoivent automatiquement leur identifiant et leur code. Un élève déjà inscrit n'est pas créé deux fois.</p>
-  </form>
-  {% endif %}
 </div>
 {% endblock %}
+{% block scripts %}<script>
+(function(){const z=document.getElementById('zone'),f=document.getElementById('fichier');if(!z)return;
+['dragenter','dragover'].forEach(e=>z.addEventListener(e,ev=>{ev.preventDefault();z.classList.add('survol');}));
+['dragleave','drop'].forEach(e=>z.addEventListener(e,ev=>{ev.preventDefault();z.classList.remove('survol');}));
+z.addEventListener('drop',ev=>{if(ev.dataTransfer.files.length){f.files=ev.dataTransfer.files;z.classList.add('envoi');f.form.submit();}});})();
+</script>{% endblock %}

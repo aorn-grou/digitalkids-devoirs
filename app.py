@@ -1384,90 +1384,288 @@ def excel_notes():
     return envoyer_classeur(wb, "notes.xlsx")
 
 
+# ------------------------------------------------------------------ import intelligent : VOS fichiers Excel → le logiciel
+DOSSIER_IMPORTS = os.path.join(DONNEES, "imports")
+MOTS_NOM = ("nometprenom", "prenometnom", "nomprenom", "prenomnom", "nomcomplet", "nomsetprenoms", "eleve", "eleves", "enfant",
+            "enfants", "apprenant", "etudiant", "name", "noms", "nom", "prenom", "prenoms", "fanampinanarana", "anarana")
+MOTS_PRENOM = ("prenom", "prenoms", "fanampinanarana")
+MOTS_NIVEAU = ("niveau", "niv", "level", "nivo")
+MOTS_COURS = ("cours", "jour", "jours", "horaire", "heure", "heures", "creneau", "seance", "groupe", "classe", "prof", "professeur",
+              "animateur", "formateur", "enseignant", "mpampianatra", "andro", "ora")
+STATUT_P = ("p", "present", "presente", "presents", "x", "1", "oui", "ok", "v", "pr", "eny", "tonga")
+STATUT_A = ("a", "absent", "absente", "absents", "abs", "0", "non", "tsy", "tsytonga")
+STATUT_R = ("r", "retard", "enretard", "late", "tara")
+JOURS_SLUG = {"lundi": 0, "mardi": 1, "mercredi": 2, "jeudi": 3, "vendredi": 4, "samedi": 5, "dimanche": 6,
+              "alatsinainy": 0, "talata": 1, "alarobia": 2, "alakamisy": 3, "zoma": 4, "asabotsy": 5, "alahady": 6}
+
+
 def lire_statut(v):
-    if v is None:
+    if v is None or v == "":
         return None
-    t = slug(str(v), 20)
-    if t in ("p", "present", "x", "1", "oui"):
+    brut = str(v).strip()
+    if brut in ("✓", "✔", "☑", "👍", "+"):
         return "P"
-    if t in ("a", "absent", "0", "non"):
+    if brut in ("✗", "✘", "❌", "-", "×"):
         return "A"
-    if t in ("r", "retard"):
+    t = re.sub(r"[^a-z0-9]", "", "".join(ch for ch in unicodedata.normalize("NFD", brut.lower()) if unicodedata.category(ch) != "Mn"))
+    if not t:
+        return None
+    if t in STATUT_P:
+        return "P"
+    if t in STATUT_A:
+        return "A"
+    if t in STATUT_R:
         return "R"
     return None
 
 
-def lire_date(v):
+def lire_date(v, annee=None):
+    """Une date dans une case Excel : vraie date, « 04/11/2026 », « 4/11 », « Mer 04-11-26 »…"""
     if isinstance(v, datetime):
         return v.date().isoformat()
-    if hasattr(v, "isoformat") and not isinstance(v, str):
+    if hasattr(v, "isoformat") and not isinstance(v, (str, int, float)):
         return v.isoformat()[:10]
-    m = re.fullmatch(r"\s*(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})\s*", str(v or ""))
+    t = str(v or "").strip()
+    m = re.search(r"(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})(?!\d)", t)
     if m:
-        try:
-            return datetime(int(m.group(3)), int(m.group(2)), int(m.group(1))).date().isoformat()
-        except ValueError:
+        a, mo, j = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    else:
+        m = re.search(r"(?<!\d)(\d{1,2})[/\-.](\d{1,2})(?:[/\-.](\d{2,4}))?(?!\d)", t)
+        if not m or len(t) > 30:
             return None
-    return None
+        j, mo = int(m.group(1)), int(m.group(2))
+        a = int(m.group(3)) if m.group(3) else (annee or aujourdhui().year)
+        if a < 100:
+            a += 2000
+    try:
+        return datetime(a, mo, j).date().isoformat()
+    except ValueError:
+        return None
+
+
+def trouver_cours(texte, crs):
+    """Reconnaît un cours dans un texte libre : « Samedi 8h », « sam 10h-12h Santatra », « Toky mercredi »…"""
+    if not str(texte or "").strip():
+        return None
+    t = slug(str(texte), 200)
+    sans_accents = "".join(ch for ch in unicodedata.normalize("NFD", str(texte).lower()) if unicodedata.category(ch) != "Mn")
+    mots = re.findall(r"[a-z]+", sans_accents)
+    jour = next((JOURS_SLUG[w] for w in mots if w in JOURS_SLUG), None)
+    if jour is None:  # abréviations : « mer », « sam », « asab »…
+        jour = next((n for w in mots if len(w) >= 3 for k, n in JOURS_SLUG.items() if k.startswith(w)), None)
+    heures = [int(h) for h in re.findall(r"(?<!\d)(\d{1,2})\s*(?:h|:|heures?)", str(texte).lower())]
+    meilleurs, score_max = [], 0
+    for c in crs:
+        sc = 0
+        if jour is not None:
+            sc += 3 if c["jour"] == jour else -5
+        if heures:  # la 1re heure écrite est l'heure de début (« 8h-10h » = cours de 8h)
+            h = int(c["debut"][:2])
+            sc += 4 if h == heures[0] else (1 if h in heures else (-2 if jour is not None else 0))
+        nom_prof = slug(c["nom"].replace("Prof", ""), 40)
+        if nom_prof and nom_prof in t:
+            sc += 2
+        if slug(c["classe"], 40) and slug(c["classe"], 40) in t:
+            sc += 1
+        if sc > score_max:
+            meilleurs, score_max = [c], sc
+        elif sc == score_max and sc > 0:
+            meilleurs.append(c)
+    return meilleurs[0] if len(meilleurs) == 1 and score_max >= 3 else None
+
+
+def lire_fichier(chemin):
+    """Renvoie [(nom_feuille, lignes)] pour un .xlsx, .xlsm ou .csv."""
+    if chemin.endswith(".csv"):
+        brut = open(chemin, "rb").read()
+        for enc in ("utf-8-sig", "cp1252", "latin-1"):
+            try:
+                texte = brut.decode(enc)
+                break
+            except UnicodeDecodeError:
+                continue
+        try:
+            dialecte = csv.Sniffer().sniff(texte[:4000], delimiters=";,\t")
+        except csv.Error:
+            dialecte = csv.excel
+        return [("CSV", [list(r) for r in csv.reader(io.StringIO(texte), dialecte)])]
+    from openpyxl import load_workbook
+    wb = load_workbook(chemin, data_only=True, read_only=True)
+    out = []
+    for ws in wb.worksheets:
+        lignes = []
+        for i, r in enumerate(ws.iter_rows(values_only=True)):
+            if i > 3000:
+                break
+            lignes.append(list(r))
+        while lignes and not any(v not in (None, "") for v in lignes[-1]):
+            lignes.pop()
+        out.append((ws.title, lignes))
+    wb.close()
+    return out
+
+
+def analyser_feuille(titre, lignes, crs):
+    """Devine les colonnes d'une feuille : nom (et prénom), niveau, cours, dates de présence."""
+    largeur = max((len(l) for l in lignes), default=0)
+    lignes = [list(l) + [None] * (largeur - len(l)) for l in lignes]
+    def s_(v):
+        t = "".join(ch for ch in unicodedata.normalize("NFD", str(v if v is not None else "")) if unicodedata.category(ch) != "Mn")
+        return re.sub(r"[^a-z]", "", t.lower())[:40]
+    entete = None
+    for i, l in enumerate(lignes[:20]):
+        if any(s_(v) in MOTS_NOM for v in l):
+            entete = i
+            break
+    if entete is None:  # pas de titre de colonne : la colonne qui a le plus de mots
+        entete = -1
+    tete = lignes[entete] if entete >= 0 else [None] * largeur
+    corps = [l for l in lignes[entete + 1:] if any(v not in (None, "") for v in l)]
+    cols_nom = [j for j, v in enumerate(tete) if s_(v) in MOTS_NOM]
+    col_prenom = next((j for j in cols_nom if s_(tete[j]) in MOTS_PRENOM and len(cols_nom) > 1), None)
+    col_nom = next((j for j in cols_nom if j != col_prenom), None)
+    if col_nom is None:
+        scores = [(sum(1 for l in corps[:50] if isinstance(l[j], str) and re.search(r"[A-Za-zÀ-ÿ]{2}", l[j]) and not lire_date(l[j])
+                       and lire_statut(l[j]) is None and not trouver_cours(l[j], crs)), j) for j in range(largeur)]
+        col_nom = max(scores)[1] if scores and max(scores)[0] else None
+    col_niv = next((j for j, v in enumerate(tete) if s_(v) in MOTS_NIVEAU or s_(v).startswith("niveau")), None)
+    col_cours = next((j for j, v in enumerate(tete) if s_(v) in MOTS_COURS and j not in (col_nom, col_prenom, col_niv)), None)
+    if col_cours is None:  # « Jour de cours », « Horaire du cours », « Nom du prof »…
+        col_cours = next((j for j, v in enumerate(tete) if j not in (col_nom, col_prenom, col_niv) and s_(v) and not lire_date(v)
+                          and any(k in s_(v) for k in ("jour", "cours", "horaire", "heure", "creneau", "seance", "groupe", "classe", "prof", "animateur", "formateur", "andro"))), None)
+    annee = None
+    for l in lignes[:max(entete, 0) + 1]:
+        for v in l:
+            m = re.search(r"(20\d\d)", str(v or ""))
+            if m:
+                annee = int(m.group(1))
+                break
+    dates = [(j, lire_date(v, annee)) for j, v in enumerate(tete) if j not in (col_nom, col_prenom, col_niv, col_cours) and lire_date(v, annee)]
+    # le cours de toute la feuille : repère [#id] du modèle, sinon le titre de la feuille ou le texte au-dessus du tableau
+    haut = " ".join(str(v) for l in lignes[:max(entete, 1)] for v in l if v)
+    m = re.search(r"\[#(\d+)\]", haut)
+    cours_feuille = (creneau(m.group(1)) if m else None) or trouver_cours(titre, crs) or trouver_cours(haut, crs)
+    return {"titre": titre, "tete": tete, "corps": corps, "largeur": largeur, "col_nom": col_nom, "col_prenom": col_prenom,
+            "col_niv": col_niv, "col_cours": col_cours, "dates": dates, "cours": cours_feuille}
+
+
+def lettre(j):
+    from openpyxl.utils import get_column_letter
+    return get_column_letter(j + 1)
+
+
+def lignes_a_importer(a, reglage_, crs):
+    """Applique les choix de l'administrateur : renvoie [{nom, niveau, cours, pointages}]."""
+    cn, cp, cv, cc = reglage_["col_nom"], reglage_["col_prenom"], reglage_["col_niv"], reglage_["col_cours"]
+    out = []
+    for l in a["corps"]:
+        nom = str(l[cn]).strip() if cn is not None and l[cn] not in (None, "") else ""
+        if cp is not None and l[cp] not in (None, ""):
+            nom = (nom + " " + str(l[cp]).strip()).strip()
+        nom = re.sub(r"^\s*(\d+\s*[.)\-]\s*|[-•]\s*)", "", nom).strip()
+        if not nom or nom.startswith("=") or len(nom) < 2 or not re.search(r"[A-Za-zÀ-ÿ]", nom) or slug(nom, 40) in ("total", "totaux", "moyenne"):
+            continue
+        niv = reglage_["niveau"]
+        if cv is not None:
+            m = re.search(r"[123]", str(l[cv] or ""))
+            if m:
+                niv = int(m.group())
+        cr = (trouver_cours(l[cc], crs) if cc is not None else None) or reglage_["cours"]
+        pts = [(d, lire_statut(l[j])) for j, d in a["dates"] if lire_statut(l[j])]
+        out.append({"nom": nom[:60], "niveau": niv, "cours": cr, "pointages": pts})
+    return out
+
+
+def chemin_import(jeton):
+    if not re.fullmatch(r"[0-9a-f]{32}\.(xlsx|xlsm|csv)", jeton or ""):
+        return None
+    p = os.path.join(DOSSIER_IMPORTS, jeton)
+    return p if os.path.exists(p) else None
 
 
 @app.route("/animateur/excel/importer", methods=["POST"])
 @animateur_requis
 @admin_requis
 def excel_importer():
-    from openpyxl import load_workbook
     f = request.files.get("fichier")
+    nom = (f.filename or "").lower() if f else ""
+    ext = nom.rsplit(".", 1)[-1] if "." in nom else ""
+    if ext == "xls":
+        flash("Ce fichier est un ancien Excel (.xls). Ouvrez-le dans Excel, puis Fichier → Enregistrer sous → « Classeur Excel (.xlsx) », et recommencez.")
+        return redirect(url_for("excel"))
+    if ext not in ("xlsx", "xlsm", "csv"):
+        flash("Choisissez un fichier Excel (.xlsx) ou CSV.")
+        return redirect(url_for("excel"))
+    os.makedirs(DOSSIER_IMPORTS, exist_ok=True)
+    for vieux in os.listdir(DOSSIER_IMPORTS):  # ménage : fichiers de plus d'un jour
+        p = os.path.join(DOSSIER_IMPORTS, vieux)
+        if os.path.getmtime(p) < datetime.now().timestamp() - 86400:
+            os.remove(p)
+    jeton = f"{secrets.token_hex(16)}.{ext}"
+    f.save(os.path.join(DOSSIER_IMPORTS, jeton))
     try:
-        wb = load_workbook(f.stream, data_only=True)
+        lire_fichier(os.path.join(DOSSIER_IMPORTS, jeton))
     except Exception:
-        flash("Ce fichier n'est pas un fichier Excel (.xlsx). Enregistrez-le en .xlsx et recommencez.")
+        os.remove(os.path.join(DOSSIER_IMPORTS, jeton))
+        flash("Le logiciel n'arrive pas à lire ce fichier. Enregistrez-le en « Classeur Excel (.xlsx) » et recommencez.")
+        return redirect(url_for("excel"))
+    session["import_nom"] = f.filename
+    return redirect(url_for("excel_apercu", f=jeton))
+
+
+@app.route("/animateur/excel/apercu", methods=["GET", "POST"])
+@animateur_requis
+@admin_requis
+def excel_apercu():
+    jeton = request.values.get("f", "")
+    chemin = chemin_import(jeton)
+    if not chemin:
+        flash("Le fichier n'est plus là : choisissez-le de nouveau.")
         return redirect(url_for("excel"))
     crs = tous_creneaux()
-    nouveaux = mis = marques = 0
-    erreurs = []
-    for ws in wb.worksheets:
-        lignes = list(ws.iter_rows(values_only=True))
-        if not lignes:
-            continue
-        titre = " ".join(str(v) for v in (lignes[0] or []) if v)
-        m = re.search(r"\[#(\d+)\]", titre)
-        cr = creneau(m.group(1)) if m else None
-        if not cr:  # sans repère : on reconnaît le nom de la feuille (ex. « Classe A Mer 14h-16h »)
-            cr = next((c for c in crs if slug(ws.title, 60) == slug(f"{c['classe']} {JOURS[c['jour']][:3]} {heure(c['debut'])}-{heure(c['fin'])}", 60)), None)
-        if not cr:
-            erreurs.append(f"feuille « {ws.title} » : cours introuvable (utilisez le modèle téléchargé ici)")
-            continue
-        hi = next((i for i, l in enumerate(lignes[:15]) if any(slug(str(v or ""), 30) in ("prenometnom", "nom", "prenom", "nometprenom") for v in l)), None)
-        if hi is None:
-            erreurs.append(f"feuille « {ws.title} » : colonne « Prénom et nom » introuvable")
-            continue
-        tete = lignes[hi]
-        col_nom = next(j for j, v in enumerate(tete) if slug(str(v or ""), 30) in ("prenometnom", "nom", "prenom", "nometprenom"))
-        col_niv = next((j for j, v in enumerate(tete) if slug(str(v or ""), 30) == "niveau"), None)
-        cols_dates = [(j, lire_date(v)) for j, v in enumerate(tete) if lire_date(v)]
-        dates_vues = set()
-        for l in lignes[hi + 1:]:
-            nom = str(l[col_nom]).strip() if col_nom < len(l) and l[col_nom] else ""
-            if not nom or nom.startswith("="):
+    feuilles = [analyser_feuille(t, l, crs) for t, l in lire_fichier(chemin)]
+
+    def choix(i, a):
+        """Les réglages d'une feuille : ceux du formulaire s'il a été envoyé, sinon ceux devinés."""
+        if request.values.get("modif"):
+            v = lambda k: request.values.get(f"{k}_{i}", "")
+            col = lambda k: int(v(k)) if v(k).isdigit() and int(v(k)) < a["largeur"] else None
+            return {"importer": v("importer") == "1", "col_nom": col("col_nom"), "col_prenom": col("col_prenom"), "col_niv": col("col_niv"),
+                    "col_cours": col("col_cours"), "niveau": int(v("niveau")) if v("niveau") in ("1", "2") else 1, "cours": creneau(v("cours"))}
+        return {"importer": a["col_nom"] is not None and bool(a["corps"]), "col_nom": a["col_nom"], "col_prenom": a["col_prenom"],
+                "col_niv": a["col_niv"], "col_cours": a["col_cours"], "niveau": 1, "cours": a["cours"]}
+
+    resultats = []
+    for i, a in enumerate(feuilles):
+        r = choix(i, a)
+        r["lignes"] = lignes_a_importer(a, r, crs) if r["col_nom"] is not None else []
+        r["sans_cours"] = sum(1 for x in r["lignes"] if not x["cours"])
+        r["nb_pointages"] = sum(len(x["pointages"]) for x in r["lignes"])
+        resultats.append(r)
+
+    if request.method == "POST" and request.form.get("action") == "importer":
+        nouveaux = connus = marques = places = 0
+        for a, r in zip(feuilles, resultats):
+            if not r["importer"]:
                 continue
-            niv = None
-            if col_niv is not None and col_niv < len(l) and str(l[col_niv] or "").strip()[:1] in ("1", "2", "3"):
-                niv = int(str(l[col_niv]).strip()[0])
-            eid, nouveau = ajouter_eleve(nom, niv, cr)
-            nouveaux += nouveau
-            mis += not nouveau
-            for j, d in cols_dates:
-                st = lire_statut(l[j] if j < len(l) else None)
-                if st:
-                    db().execute("INSERT OR REPLACE INTO presences VALUES (?,?,?,?)", (eid, cr["id"], d, st))
-                    dates_vues.add(d)
-                    marques += 1
-        for d in dates_vues:
-            db().execute("INSERT OR IGNORE INTO seances VALUES (?,?,?,?)", (cr["id"], d, "Import Excel", maintenant()))
-    db().commit()
-    flash(f"Import terminé : {nouveaux} élève(s) ajouté(s), {mis} déjà connu(s) mis à jour, {marques} case(s) de présence enregistrée(s)."
-          + (" Attention : " + " ; ".join(erreurs) if erreurs else ""))
-    return redirect(url_for("excel"))
+            for x in r["lignes"]:
+                eid, nouveau = ajouter_eleve(x["nom"], x["niveau"], x["cours"])
+                nouveaux += nouveau
+                connus += not nouveau
+                places += bool(x["cours"])
+                if x["cours"]:
+                    for d, st in x["pointages"]:
+                        db().execute("INSERT OR REPLACE INTO presences VALUES (?,?,?,?)", (eid, x["cours"]["id"], d, st))
+                        db().execute("INSERT OR IGNORE INTO seances VALUES (?,?,?,?)", (x["cours"]["id"], d, "Import Excel", maintenant()))
+                        marques += 1
+        db().commit()
+        os.remove(chemin)
+        sans = nouveaux + connus - places
+        flash(f"✅ Import terminé : {nouveaux} élève(s) ajouté(s), {connus} déjà connu(s) mis à jour, {marques} pointage(s) enregistré(s)."
+              + (f" {sans} élève(s) sans cours : placez-les dans « Élèves par cours »." if sans else ""))
+        return redirect(url_for("eleves"))
+    return render_template("excel_apercu.html", jeton=jeton, nom_fichier=session.get("import_nom", "votre fichier"),
+                           feuilles=list(zip(feuilles, resultats)), crs=crs, lettre=lettre)
 
 
 @app.errorhandler(404)
