@@ -11,6 +11,7 @@ import sqlite3
 import unicodedata
 from datetime import datetime
 from functools import wraps
+from datetime import timedelta, timezone
 
 from flask import (Flask, abort, flash, g, jsonify, redirect, render_template, request,
                    Response, session, url_for)
@@ -23,6 +24,11 @@ DONNEES = os.path.join(ICI, "donnees")
 DOSSIER_DEVOIRS = os.path.join(ICI, "devoirs")
 os.makedirs(DONNEES, exist_ok=True)
 BASE = os.path.join(DONNEES, "ecole.db")
+
+
+def maintenant():
+    """Date et heure exactes de Madagascar (UTC+3), quel que soit le fuseau du serveur."""
+    return datetime.now(timezone(timedelta(hours=3))).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def cle_secrete():
@@ -63,6 +69,8 @@ def init_db():
         semaine TEXT, contenu TEXT NOT NULL, actif INTEGER DEFAULT 1, cree TEXT);
     CREATE TABLE IF NOT EXISTS reponses (eleve_id INTEGER, devoir_id TEXT, ex_id TEXT, reponse TEXT,
         note REAL, date TEXT, PRIMARY KEY (eleve_id, devoir_id, ex_id));
+    CREATE TABLE IF NOT EXISTS journal (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, eleve_id INTEGER,
+        type TEXT, detail TEXT, lu INTEGER DEFAULT 0);
     """)
     con.commit()
     # premier lancement : on importe les devoirs du dossier devoirs/
@@ -94,7 +102,7 @@ def enregistrer_devoir(con, d):
                    ON CONFLICT(id) DO UPDATE SET niveau=excluded.niveau, titre=excluded.titre,
                    semaine=excluded.semaine, contenu=excluded.contenu""",
                 (d["id"], int(d["niveau"]), d["titre"], d.get("semaine", ""), json.dumps(d, ensure_ascii=False),
-                 datetime.now().isoformat(timespec="minutes")))
+                 maintenant()))
 
 
 def importer_dossier(con):
@@ -109,6 +117,17 @@ def importer_dossier(con):
                     n += 1
     con.commit()
     return n
+
+
+def noter(eleve_id, type_, detail=""):
+    """Ajoute une ligne au rapport de l'animateur."""
+    db().execute("INSERT INTO journal (date, eleve_id, type, detail) VALUES (?,?,?,?)",
+                 (maintenant(), eleve_id, type_, detail))
+    db().commit()
+
+
+def inscriptions_ouvertes():
+    return reglage("inscriptions", "1") == "1"
 
 
 def reglage(cle, defaut=None):
@@ -182,7 +201,13 @@ def animateur_requis(f):
 
 @app.context_processor
 def contexte():
-    return {"annee": datetime.now().year}
+    nouveaux = 0
+    if session.get("animateur"):
+        try:
+            nouveaux = db().execute("SELECT COUNT(*) FROM journal WHERE lu=0").fetchone()[0]
+        except sqlite3.Error:
+            nouveaux = 0
+    return {"annee": datetime.now().year, "rapports_nouveaux": nouveaux}
 
 
 # ------------------------------------------------------------------ élèves
@@ -197,21 +222,69 @@ def accueil():
 def connexion():
     erreur = None
     if request.method == "POST":
-        ident = request.form.get("identifiant", "").strip().lower()
+        nom = request.form.get("identifiant", "").strip()
         code = request.form.get("code", "").strip()
         tentatives = session.get("tentatives", 0)
         if tentatives >= 8:
-            erreur = "Trop d'essais. Demande ton code à l'animateur."
+            erreur = "Trop d'essais. Demande de l'aide à l'animateur."
         else:
-            e = db().execute("SELECT * FROM eleves WHERE identifiant=?", (ident,)).fetchone()
-            if e and secrets.compare_digest(e["code"], code):
+            # on accepte l'identifiant (rivo25) ou le prénom (Rivo) avec le bon code
+            cands = db().execute("SELECT * FROM eleves WHERE identifiant=? OR lower(prenom)=?", (nom.lower(), nom.lower())).fetchall()
+            bons = [e for e in cands if secrets.compare_digest(e["code"], code)]
+            if len(bons) == 1:
+                e = bons[0]
                 session.clear()
                 session.permanent = True
                 session["eleve_id"] = e["id"]
+                noter(e["id"], "connexion", f"Niveau {e['niveau']}")
                 return redirect(url_for("mes_devoirs"))
-            session["tentatives"] = tentatives + 1
-            erreur = "Identifiant ou code incorrect. Vérifie et recommence."
-    return render_template("connexion.html", erreur=erreur)
+            if len(bons) > 1:
+                erreur = "Plusieurs élèves ont ce prénom : écris ton identifiant (par exemple rivo25)."
+            else:
+                session["tentatives"] = tentatives + 1
+                erreur = "Prénom ou code incorrect. Vérifie et recommence."
+    return render_template("connexion.html", erreur=erreur, inscriptions=inscriptions_ouvertes())
+
+
+@app.route("/inscription", methods=["GET", "POST"])
+def inscription():
+    if not inscriptions_ouvertes():
+        return render_template("erreur.html", message="Les inscriptions sont fermées. Demande à ton animateur de créer ton compte.")
+    erreur, valeurs = None, {}
+    if request.method == "POST":
+        prenom = re.sub(r"\s+", " ", request.form.get("prenom", "")).strip()[:40]
+        code = request.form.get("code", "").strip()
+        code2 = request.form.get("code2", "").strip()
+        niveau = request.form.get("niveau", "")
+        valeurs = {"prenom": prenom, "niveau": niveau}
+        if len(prenom) < 2:
+            erreur = "Écris ton prénom."
+        elif not re.fullmatch(r"\d{4}", code):
+            erreur = "Ton code secret doit avoir exactement 4 chiffres."
+        elif code != code2:
+            erreur = "Les deux codes ne sont pas pareils. Recommence."
+        elif niveau not in ("1", "2", "3"):
+            erreur = "Choisis ton niveau."
+        elif db().execute("SELECT 1 FROM eleves WHERE lower(prenom)=? AND code=?", (prenom.lower(), code)).fetchone():
+            erreur = "Un élève a déjà ce prénom avec ce code. Choisis un autre code."
+        else:
+            ident = nouvel_identifiant(prenom)
+            cur = db().execute("INSERT INTO eleves (prenom, identifiant, code, niveau, cree) VALUES (?,?,?,?,?)",
+                               (prenom, ident, code, int(niveau), maintenant()))
+            db().commit()
+            session.clear()
+            session.permanent = True
+            session["eleve_id"] = cur.lastrowid
+            session["nouveau"] = True
+            noter(cur.lastrowid, "inscription", f"Niveau {niveau} · identifiant {ident}")
+            return redirect(url_for("bienvenue"))
+    return render_template("inscription.html", erreur=erreur, v=valeurs)
+
+
+@app.route("/bienvenue")
+@eleve_requis
+def bienvenue():
+    return render_template("bienvenue.html", eleve=eleve_courant())
 
 
 @app.route("/deconnexion")
@@ -277,9 +350,15 @@ def valider():
             return jsonify(erreur="Réponse trop longue."), 400
         note = corriger(ex, reponse)
         db().execute("INSERT INTO reponses VALUES (?,?,?,?,?,?)",
-                     (e["id"], r["id"], ex["id"], texte, note, datetime.now().isoformat(timespec="minutes")))
+                     (e["id"], r["id"], ex["id"], texte, note, maintenant()))
         db().commit()
     notes = [x["note"] for x in db().execute("SELECT note FROM reponses WHERE eleve_id=? AND devoir_id=?", (e["id"], r["id"]))]
+    if not deja:
+        noter(e["id"], "exercice", f"{r['titre']} · {ex['titre']} : {note}/20")
+        if len(notes) == 1:
+            noter(e["id"], "debut", f"{r['titre']}")
+        if len(notes) == len(d["exercices"]):
+            noter(e["id"], "fini", f"{r['titre']} · moyenne {moyenne(notes)}/20")
     return jsonify(note=note, corrige=ex.get("corrige", ""), faits=len(notes), total=len(d["exercices"]), moyenne=moyenne(notes))
 
 
@@ -318,7 +397,11 @@ def tableau():
     for x in db().execute("SELECT eleve_id, devoir_id, COUNT(*) n, AVG(note) m FROM reponses GROUP BY eleve_id, devoir_id"):
         notes[(x["eleve_id"], x["devoir_id"])] = (x["n"], round(x["m"], 1))
     nb_ex = {d["id"]: len(json.loads(d["contenu"])["exercices"]) for d in devoirs}
-    return render_template("tableau.html", eleves=eleves, devoirs=devoirs, notes=notes, nb_ex=nb_ex)
+    derniere = {x["eleve_id"]: x["d"] for x in db().execute("SELECT eleve_id, MAX(date) d FROM journal WHERE type IN ('connexion','inscription') GROUP BY eleve_id")}
+    recents = db().execute("""SELECT j.*, e.prenom FROM journal j LEFT JOIN eleves e ON e.id = j.eleve_id
+                              ORDER BY j.id DESC LIMIT 8""").fetchall()
+    return render_template("tableau.html", eleves=eleves, devoirs=devoirs, notes=notes, nb_ex=nb_ex,
+                           recents=recents, derniere=derniere, inscriptions=inscriptions_ouvertes())
 
 
 @app.route("/animateur/eleves", methods=["GET", "POST"])
@@ -333,7 +416,7 @@ def eleves():
                 continue
             ident, code = nouvel_identifiant(prenom), nouveau_code()
             db().execute("INSERT INTO eleves (prenom, identifiant, code, niveau, cree) VALUES (?,?,?,?,?)",
-                         (prenom, ident, code, niveau, datetime.now().isoformat(timespec="minutes")))
+                         (prenom, ident, code, niveau, maintenant()))
             nouveaux.append(ident)
         db().commit()
         if nouveaux:
@@ -362,6 +445,7 @@ def eleve_detail(eid):
             flash("Le devoir est remis à zéro pour cet élève.")
         elif action == "supprimer":
             db().execute("DELETE FROM reponses WHERE eleve_id=?", (eid,))
+            db().execute("DELETE FROM journal WHERE eleve_id=?", (eid,))
             db().execute("DELETE FROM eleves WHERE id=?", (eid,))
             db().commit()
             flash("Élève supprimé.")
@@ -424,6 +508,43 @@ def devoirs_admin():
         n = db().execute("SELECT COUNT(DISTINCT eleve_id) FROM reponses WHERE devoir_id=?", (r["id"],)).fetchone()[0]
         liste.append({"r": r, "nb": len(d["exercices"]), "eleves": n})
     return render_template("devoirs_admin.html", devoirs=liste)
+
+
+@app.route("/animateur/rapports")
+@animateur_requis
+def rapports():
+    jour = request.args.get("jour") or maintenant()[:10]
+    lignes = db().execute("""SELECT j.*, e.prenom, e.identifiant, e.niveau, e.code FROM journal j LEFT JOIN eleves e ON e.id = j.eleve_id
+                             WHERE substr(j.date,1,10)=? ORDER BY j.id DESC""", (jour,)).fetchall()
+    # résumé : une ligne par élève actif ce jour-là
+    resume = {}
+    for l in reversed(lignes):
+        if l["eleve_id"] is None or l["prenom"] is None:
+            continue
+        r = resume.setdefault(l["eleve_id"], {"prenom": l["prenom"], "identifiant": l["identifiant"], "code": l["code"],
+                                              "niveau": l["niveau"], "premiere": l["date"], "derniere": l["date"],
+                                              "connexions": 0, "exercices": 0, "fini": None, "id": l["eleve_id"]})
+        r["derniere"] = l["date"]
+        if l["type"] in ("connexion", "inscription"):
+            r["connexions"] += 1
+        elif l["type"] == "exercice":
+            r["exercices"] += 1
+        elif l["type"] == "fini":
+            r["fini"] = (l["date"], l["detail"])
+    jours = [x[0] for x in db().execute("SELECT DISTINCT substr(date,1,10) FROM journal ORDER BY 1 DESC LIMIT 30")]
+    page = render_template("rapports.html", lignes=lignes, resume=list(resume.values()), jour=jour, jours=jours)
+    db().execute("UPDATE journal SET lu=1 WHERE lu=0")
+    db().commit()
+    return page
+
+
+@app.route("/animateur/inscriptions", methods=["POST"])
+@animateur_requis
+def basculer_inscriptions():
+    db().execute("INSERT OR REPLACE INTO reglages VALUES ('inscriptions', ?)", ("0" if inscriptions_ouvertes() else "1",))
+    db().commit()
+    flash("Inscriptions " + ("ouvertes : les élèves peuvent créer leur compte." if inscriptions_ouvertes() else "fermées."))
+    return redirect(url_for("tableau"))
 
 
 @app.route("/animateur/notes.csv")

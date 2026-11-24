@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block titre %}Mot de passe · Digital Kids{% endblock %}
-{% block ruban %}<a href="{{ url_for('tableau') }}">Tableau des notes</a><a href="{{ url_for('eleves') }}">Élèves</a><a href="{{ url_for('devoirs_admin') }}">Devoirs</a><a href="{{ url_for('fiches') }}">Fiches de connexion</a><a class="on" href="{{ url_for('mot_de_passe') }}">Mot de passe</a>{% endblock %}
+{% block ruban %}{% set actif = 'mot_de_passe' %}{% include '_nav.html' %}{% endblock %}
 {% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
 {% block contenu %}
 <form class="carte form-connexion" method="post" style="max-width:460px">

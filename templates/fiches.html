@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block titre %}Fiches de connexion · Digital Kids{% endblock %}
-{% block ruban %}<a href="{{ url_for('tableau') }}">Tableau des notes</a><a href="{{ url_for('eleves') }}">Élèves</a><a href="{{ url_for('devoirs_admin') }}">Devoirs</a><a class="on" href="{{ url_for('fiches') }}">Fiches de connexion</a><a href="{{ url_for('mot_de_passe') }}">Mot de passe</a>{% endblock %}
+{% block ruban %}{% set actif = 'fiches' %}{% include '_nav.html' %}{% endblock %}
 {% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
 {% block contenu %}
 <div class="no-print" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">

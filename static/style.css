@@ -207,3 +207,20 @@ table.gridtab th{background:var(--ciel2);border-color:var(--bord)}
   .case{width:44px;height:44px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* inscription et rapport */
+.nouveau-compte{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:2px dashed var(--bord);padding-top:14px}
+.etape-ins{display:flex;align-items:center;gap:10px;margin-top:6px}
+.etape-ins .num{width:34px;height:34px;font-size:17px}
+.niveaux{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.niv{display:flex;gap:10px;align-items:flex-start;border:3px solid var(--bord);border-radius:16px;padding:14px;cursor:pointer;background:#fff}
+.niv:has(input:checked){border-color:var(--orange);background:#FFF4E6}
+.niv input{width:22px;height:22px;accent-color:var(--orange);margin-top:3px}
+.niv b{display:block;font:800 22px var(--titre);color:var(--nuit)}
+.niv small{font-weight:700;color:var(--gris)}
+.memo{background:#FFF7DD;border:2px dashed #F2C04A;border-radius:14px;padding:12px 16px;text-align:left}
+.badge-new{display:inline-block;background:var(--jaune);color:var(--nuit);border-radius:99px;padding:0 7px;font-size:12px;margin-left:3px}
+.evt{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1.5px solid var(--ciel2)}
+.evt:last-child{border:0}
+.evt .h{font-variant-numeric:tabular-nums;font-weight:800;color:var(--bleu);min-width:68px}
+.evt-fini{background:#EAFBEF}
+@media (max-width:720px){.niveaux{grid-template-columns:1fr}}

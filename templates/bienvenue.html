@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titre %}Bienvenue · Digital Kids{% endblock %}
+{% block qui %}<span>👋 {{ eleve.prenom }}</span><a class="btn-lien" href="{{ url_for('deconnexion') }}">Sortir</a>{% endblock %}
+{% block contenu %}
+<div class="carte" style="max-width:640px;margin:0 auto;text-align:center;display:grid;gap:14px">
+  <div style="font-size:54px">🎉</div>
+  <h1 style="font-size:34px;color:var(--nuit)">Bienvenue {{ eleve.prenom }} !</h1>
+  <p style="font-size:18px;margin:0">Ton compte est créé pour le <b>niveau {{ eleve.niveau }}</b>.</p>
+  <div class="memo">
+    <p style="margin:0 0 6px;font-weight:800">Pour revenir la prochaine fois, retiens bien :</p>
+    <p style="margin:0">Mon prénom : <b>{{ eleve.prenom }}</b></p>
+    <p style="margin:0">Mon code secret : <b>les 4 chiffres que tu viens de choisir</b></p>
+  </div>
+  <a class="btn" href="{{ url_for('mes_devoirs') }}" style="justify-self:center">Voir mes devoirs ➜</a>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titre %}Créer mon compte · Digital Kids{% endblock %}
+{% block qui %}<a class="btn-lien" href="{{ url_for('connexion') }}">J'ai déjà un compte</a>{% endblock %}
+{% block contenu %}
+<form class="carte form-connexion" method="post" autocomplete="off" style="max-width:640px;margin:0 auto">
+  <span class="pastille" style="justify-self:start">NOUVEL ÉLÈVE</span>
+  <h1 style="font-size:32px;color:var(--nuit)">Je crée mon compte</h1>
+  <p class="sous" style="margin:0">3 petites étapes, et tu peux faire ton devoir.</p>
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+
+  <div class="etape-ins"><span class="num">1</span><label for="prenom">Mon prénom</label></div>
+  <input type="text" id="prenom" name="prenom" value="{{ v.prenom or '' }}" placeholder="ex. Rivo" required maxlength="40" spellcheck="false">
+
+  <div class="etape-ins"><span class="num">2</span><label for="code">Je choisis mon code secret (4 chiffres)</label></div>
+  <p class="aide" style="margin:0">Choisis 4 chiffres faciles à retenir pour toi, mais pas pour les autres. Ne le dis à personne, sauf à ton animateur.</p>
+  <div class="deux">
+    <input class="code" type="password" id="code" name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="••••" required aria-label="Code secret">
+    <input class="code" type="password" id="code2" name="code2" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="encore" required aria-label="Le même code encore une fois">
+  </div>
+
+  <div class="etape-ins"><span class="num">3</span><label>Je choisis mon niveau</label></div>
+  <div class="niveaux">
+    <label class="niv"><input type="radio" name="niveau" value="1" {{ 'checked' if v.niveau == '1' }} required>
+      <span><b>Niveau 1</b><small>Clavier, souris, dossiers et Writer</small></span></label>
+    <label class="niv"><input type="radio" name="niveau" value="2" {{ 'checked' if v.niveau == '2' }}>
+      <span><b>Niveau 2</b><small>Logique, algorithmes et Scratch</small></span></label>
+  </div>
+  <p class="aide" style="margin:0">Tu ne sais pas ? Demande à ton animateur.</p>
+  <button class="btn" type="submit">Créer mon compte ➜</button>
+</form>
+{% endblock %}
