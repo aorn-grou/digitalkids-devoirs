@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% from "_calendrier.html" import calendrier %}
+{% macro like(r=false) %}<span class="rm-ok{{ ' r' if r }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10v11H3V10zM7 10l4-8a2.5 2.5 0 0 1 2.9 2.9L13 9h6.2a2 2 0 0 1 2 2.4l-1.5 7.5a2.5 2.5 0 0 1-2.5 2.1H7"/></svg></span>{% endmacro %}
+{% macro croix() %}<span class="rm-ko"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></span>{% endmacro %}
 {% block titre %}Rapport de présence · Digital Kids{% endblock %}
 {% block scripts %}<script>
 (function(){const q=document.getElementById('rm-q');if(!q)return;
 const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z]/g,'');
-const rows=[...document.querySelectorAll('#rm-table tbody tr')],n=document.getElementById('rm-compte'),rien=document.getElementById('rm-rien');
-function filtre(){const k=norm(q.value);let v=0;rows.forEach(r=>{const ok=!k||r.dataset.nom.includes(k);r.hidden=!ok;v+=ok;});n.textContent=v+' élève(s)';rien.hidden=v>0;}
-q.addEventListener('input',filtre);filtre();
-const auj=document.querySelector('#rm-table th.auj'),d=document.querySelector('.rm-defile');if(auj&&d)d.scrollLeft=Math.max(0,auj.offsetLeft-d.clientWidth/2);})();
+const rows=[...document.querySelectorAll('#rm-table tbody tr')],pts=[...document.querySelectorAll('#pt-table tbody tr')],n=document.getElementById('rm-compte'),np=document.getElementById('pt-compte'),rien=document.getElementById('rm-rien');
+function filtre(){const k=norm(q.value);let v=0;rows.forEach(r=>{const ok=!k||r.dataset.nom.includes(k);r.hidden=!ok;v+=ok;});n.textContent=v+' élève(s)';if(rien)rien.hidden=v>0;let w=0;pts.forEach(r=>{const ok=!k||r.dataset.nom.includes(k);r.hidden=!ok;w+=ok;});if(np)np.textContent=w+' pointage(s)';}
+q.addEventListener('input',filtre);filtre();})();
 </script>{% endblock %}
 {% block ruban %}{% set actif = 'rapport_presence' %}{% include '_nav.html' %}{% endblock %}
 {% block qui %}{% include '_qui.html' %}{% endblock %}
@@ -36,24 +37,42 @@ const auj=document.querySelector('#rm-table th.auj'),d=document.querySelector('.
       <input type="search" id="rm-q" value="{{ q }}" placeholder="Rechercher le nom d'un élève…" aria-label="Rechercher le nom d'un élève" autocomplete="off">
     </form>
     <span class="aide" id="rm-compte">{{ lignes|length }} élève(s)</span>
-    <span class="rm-leg"><span class="rm-ok">✓</span> présent <span class="rm-ok r">✓</span> en retard <span class="rm-ko">✗</span> absent <span class="rm-cours"></span> jour de cours</span>
+    <span class="rm-leg">{{ like() }} présent {{ like(true) }} en retard (compté présent) {{ croix() }} absent <span class="rm-cours"></span> jour de cours</span>
   </div>
   {% if not lignes %}<p class="vide">Aucun élève{{ ' pour « ' ~ q ~ ' »' if q }}.</p>{% else %}
   <div class="defile rm-defile"><table class="rm-table" id="rm-table">
-    <thead><tr><th class="rm-nom">Élève</th>
+    <thead><tr><th class="rm-nom">Élève</th><th class="rm-tot" title="Présences">{{ like() }}</th><th class="rm-tot" title="Absences">{{ croix() }}</th><th class="rm-tot">%</th>
       {% for j in jours %}<th class="{{ 'we' if j.js >= 5 }}{{ ' auj' if j.d == aujourdhui_iso() }}{{ ' fait' if j.d in jours_faits }}"><small>{{ 'LMMJVSD'[j.js] }}</small>{{ j.n }}</th>{% endfor %}
-      <th class="rm-tot">✓</th><th class="rm-tot">✗</th><th class="rm-tot">%</th></tr></thead>
+      </tr></thead>
     <tbody>
     {% for l in lignes %}<tr data-nom="{{ l.cle }}">
       <td class="rm-nom"><a href="{{ url_for('eleve_detail', eid=l.e.id) }}">{{ l.e.prenom }}</a><small>{{ l.cr.horaire ~ ' · ' ~ l.cr.nom if l.cr else 'sans cours' }} · niv. {{ l.e.niveau }}</small></td>
-      {% for c in l.cases %}<td class="{{ 'cours' if c.cours }}{{ ' we' if jours[loop.index0].js >= 5 }}{{ ' auj' if jours[loop.index0].d == aujourdhui_iso() }}">{% if c.st == 'P' %}<span class="rm-ok" title="Présent le {{ jours[loop.index0].d|date_fr }}">✓</span>{% elif c.st == 'R' %}<span class="rm-ok r" title="En retard le {{ jours[loop.index0].d|date_fr }}">✓</span>{% elif c.st == 'A' %}<span class="rm-ko" title="Absent le {{ jours[loop.index0].d|date_fr }}">✗</span>{% endif %}</td>{% endfor %}
-      <td class="rm-tot v">{{ l.presents }}</td><td class="rm-tot k">{{ l.absents }}</td>
+<td class="rm-tot v">{{ l.presents }}</td><td class="rm-tot k">{{ l.absents }}</td>
       <td class="rm-tot">{% if l.taux is not none %}<span class="chip {{ 'vert' if l.taux >= 80 else ('orange' if l.taux >= 60 else 'rouge') }}">{{ l.taux }}%</span>{% else %}—{% endif %}</td>
+      {% for c in l.cases %}<td class="{{ 'cours' if c.cours }}{{ ' we' if jours[loop.index0].js >= 5 }}{{ ' auj' if jours[loop.index0].d == aujourdhui_iso() }}">{% if c.st in ('P', 'R') %}<span title="{{ 'Présent' if c.st == 'P' else 'En retard' }} le {{ jours[loop.index0].d|date_fr }}">{{ like(c.st == 'R') }}</span>{% elif c.st == 'A' %}<span title="Absent le {{ jours[loop.index0].d|date_fr }}">{{ croix() }}</span>{% endif %}</td>{% endfor %}
+
     </tr>{% endfor %}
     </tbody>
   </table></div>
   <p class="vide" id="rm-rien" hidden>Aucun élève ne correspond à cette recherche.</p>
   {% endif %}
+</div>
+<div class="carte rm-carte">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <h2 style="color:var(--nuit)">Chaque pointage du mois</h2><span class="aide" id="pt-compte">{{ pointages|length }} pointage(s)</span></div>
+  {% if pointages %}
+  <div class="defile" style="margin-top:12px;max-height:60vh;overflow:auto"><table class="tableau-notes" id="pt-table">
+    <thead><tr><th>Date du cours</th><th>Élève</th><th>Cours</th><th>Pointage</th><th>Pointé par</th><th>Enregistré le</th></tr></thead>
+    <tbody>{% for x in pointages %}<tr data-nom="{{ x.cle }}">
+      <td><b>{{ JOURS[x.date|jour_semaine] }} {{ x.date|date_fr }}</b></td>
+      <td><a href="{{ url_for('eleve_detail', eid=x.e.id) }}">{{ x.e.prenom }}</a></td>
+      <td>{{ x.cr.horaire ~ ' · ' ~ x.cr.nom if x.cr else '—' }}</td>
+      <td>{% if x.statut == 'A' %}<span class="pt-st ko">{{ croix() }} Absent</span>{% else %}<span class="pt-st ok">{{ like(x.statut == 'R') }} {{ 'En retard' if x.statut == 'R' else 'Présent' }}</span>{% endif %}</td>
+      <td>{{ x.par or '—' }}</td>
+      <td class="aide">{{ (x.le[:10]|date_fr ~ ' à ' ~ x.le[11:16]) if x.le else '—' }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="vide" style="margin-top:12px">Aucun pointage ce mois-ci.</p>{% endif %}
 </div>
 {% endif %}
 {% for x in (pres if vue != 'mois' else []) %}

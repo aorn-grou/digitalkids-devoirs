@@ -262,4 +262,10 @@ ok("3 élève(s) ajouté(s)" in r, "insertion de 3 noms (numéros et tirets enle
 ok({x[0] for x in con.execute("SELECT prenom FROM eleves WHERE creneau_id=? AND niveau=1", (s14,))} >= {"Rado Rakoto", "Hanta", "Mialy"}, "les noms sont dans le bon cours, niveau 1")
 r = c.post("/animateur/inserer", data={"creneau": str(s14), "niveau": "1", "prenoms": "Hanta"}, follow_redirects=True).get_data(as_text=True)
 ok("1 déjà dans la liste" in r, "un nom déjà inséré n'est pas recréé")
+# ---- rapport mensuel : like vert / croix rouge / chaque pointage
+rm = c.get(f"/animateur/presences?mois={mois}").get_data(as_text=True)
+ok('id="rm-table"' in rm and 'class="rm-ok' in rm and 'class="rm-ko' in rm, "tableau du mois : like vert et croix rouge")
+ok("Chaque pointage du mois" in rm and 'id="pt-table"' in rm and "Mr Hery" in rm.split("Chaque pointage du mois")[1], "liste de chaque pointage avec qui a pointé")
+rq = c.get(f"/animateur/presences?mois={mois}&q=rakoto").get_data(as_text=True)
+ok("Andry Rakoto" in rq and "Be Rasoa" not in rq.split('id="rm-table"')[1], "recherche par nom dans le rapport mensuel")
 print("\nTOUS LES TESTS SONT PASSÉS")

@@ -631,3 +631,22 @@ button,.btn,a{touch-action:manipulation}
 .rm-tot.v{color:#15803D}.rm-tot.k{color:#B91C1C}
 .rm-table thead .rm-tot{font-size:14px}
 @media print{.rm-defile{max-height:none;overflow:visible}.rm-table{font-size:9px}.rm-table th,.rm-table td{min-width:0;height:22px}.rm-ok,.rm-ko{width:auto;height:auto;background:none!important;box-shadow:none!important;font-size:12px}.rm-ok{color:#000!important}.rm-ko{color:#000!important}.rm-nom{position:static;min-width:120px;box-shadow:none}.rm-table td.cours{background:none}}
+/* icônes « like » vert et croix rouge */
+.rm-ok svg,.rm-ko svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.rm-ok.r{background:var(--vert);box-shadow:0 0 0 2.5px #fff,0 0 0 4.5px var(--orange)}
+.rm-tot .rm-ok,.rm-tot .rm-ko{width:22px;height:22px;animation:none}
+.rm-tot .rm-ok svg,.rm-tot .rm-ko svg{width:12px;height:12px}
+.pt-st{display:inline-flex;align-items:center;gap:8px;font-weight:700}
+.pt-st.ok{color:#15803D}.pt-st.ko{color:#B91C1C}
+.pt-st .rm-ok,.pt-st .rm-ko{width:24px;height:24px;animation:none}
+#pt-table td{white-space:nowrap}
+@media print{.rm-ok svg,.rm-ko svg{stroke:#000}}
+/* tout le mois visible d'un coup sur un écran d'ordinateur */
+.rm-table th,.rm-table td{min-width:29px;height:40px}
+.rm-table .rm-nom{min-width:170px;max-width:200px;padding:6px 10px}
+.rm-table td .rm-ok,.rm-table td .rm-ko{width:23px;height:23px}
+.rm-table td .rm-ok svg,.rm-table td .rm-ko svg{width:13px;height:13px}
+.rm-table .rm-tot{min-width:36px}
+.rm-table .rm-tot{background:#FBFCFE;font-weight:800}
+.rm-table td.rm-tot.v{color:#15803D}.rm-table td.rm-tot.k{color:#B91C1C}
+.rm-table tr>.rm-tot:nth-child(4){border-right:2px solid var(--bord-fort)}

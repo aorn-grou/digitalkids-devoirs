@@ -392,6 +392,7 @@ def date_fr(d):
 
 
 app.jinja_env.filters["date_fr"] = date_fr
+app.jinja_env.filters["jour_semaine"] = lambda d: datetime.strptime(d, "%Y-%m-%d").weekday()
 app.jinja_env.filters["mois_libelle"] = mois_libelle
 app.jinja_env.filters["heure"] = heure
 app.jinja_env.globals["JOURS"] = JOURS
@@ -1230,7 +1231,17 @@ def rapport_mensuel(mois, q=""):
         ab = sum(1 for c in cases if c["st"] == "A")
         lignes.append({"e": e, "cr": cr, "cases": cases, "presents": p, "absents": ab, "taux": taux(p, ab), "cle": slug(e["prenom"], 100)})
     lignes.sort(key=lambda l: ((l["cr"] or {}).get("classe", "~"), (l["cr"] or {}).get("jour", 9), (l["cr"] or {}).get("debut", ""), l["e"]["prenom"].lower()))
-    return {"jours": jours, "lignes": lignes, "jours_faits": jours_faits}
+    ids = {l["e"]["id"]: l for l in lignes}
+    pointages = []
+    for x in db().execute("""SELECT p.eleve_id, p.creneau_id, p.date, p.statut, s.saisi_par, s.saisi_le FROM presences p
+                             LEFT JOIN seances s ON s.creneau_id = p.creneau_id AND s.date = p.date
+                             WHERE substr(p.date,1,7)=? ORDER BY p.date DESC""", (mois,)):
+        if x["eleve_id"] in ids:
+            l = ids[x["eleve_id"]]
+            pointages.append({"date": x["date"], "statut": x["statut"], "e": l["e"], "cle": l["cle"],
+                              "cr": noms_cr.get(x["creneau_id"]), "par": x["saisi_par"] or "", "le": x["saisi_le"] or ""})
+    pointages.sort(key=lambda t: (t["date"], t["e"]["prenom"].lower()), reverse=True)
+    return {"jours": jours, "lignes": lignes, "jours_faits": jours_faits, "pointages": pointages}
 
 
 # ------------------------------------------------------------------ recherche
