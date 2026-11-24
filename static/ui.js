@@ -40,3 +40,6 @@
     if (e.key === "/" && c && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); c.focus(); }
   });
 })();
+// Menu latéral : se ferme avec Échap ou quand on choisit une page (tablette / téléphone)
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.body.classList.remove("menu-ouvert"); });
+document.querySelectorAll(".sidebar a").forEach(a => a.addEventListener("click", () => document.body.classList.remove("menu-ouvert")));
