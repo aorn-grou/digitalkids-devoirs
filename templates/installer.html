@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titre %}Installer l'application · Digital Kids{% endblock %}
+{% block qui %}<a class="btn-lien" href="{{ url_for('accueil') }}">Retour</a>{% endblock %}
+{% block contenu %}
+<h1 class="titre-page">📲 Installer l'application Digital Kids</h1>
+<p class="sous">Une fois installée, l'application a son icône sur l'écran : on la touche et les devoirs s'ouvrent directement. Il faut Internet pour faire les devoirs.</p>
+<div style="text-align:center;margin:14px 0"><a class="btn" href="#" data-installer hidden>📲 Installer maintenant</a></div>
+<div class="grille-admin installer-aide" style="margin-top:12px">
+  <div class="carte"><h2 style="color:var(--nuit)">💻 Ordinateur (Chrome ou Edge)</h2>
+    <ol><li>Ouvrez le site dans <b>Google Chrome</b> ou <b>Microsoft Edge</b>.</li>
+      <li>Cliquez sur le bouton orange <b>📲 Installer l'application</b> en haut.</li>
+      <li>Sinon : cliquez sur la petite icône <b>⊕ / écran avec une flèche</b> au bout de la barre d'adresse, puis <b>Installer</b>.</li>
+      <li>L'icône <b>Digital Kids</b> apparaît sur le bureau et dans le menu Démarrer.</li></ol></div>
+  <div class="carte"><h2 style="color:var(--nuit)">📱 Tablette ou téléphone Android</h2>
+    <ol><li>Ouvrez le site dans <b>Chrome</b>.</li>
+      <li>Touchez <b>📲 Installer l'application</b> en haut.</li>
+      <li>Sinon : touchez le menu <b>⋮</b> (3 points en haut à droite) → <b>Installer l'application</b> (ou <b>Ajouter à l'écran d'accueil</b>).</li>
+      <li>Touchez <b>Installer</b> : l'icône apparaît avec les autres applications.</li></ol></div>
+  <div class="carte"><h2 style="color:var(--nuit)">🍏 iPad ou iPhone</h2>
+    <ol><li>Ouvrez le site dans <b>Safari</b>.</li>
+      <li>Touchez le bouton <b>Partager</b> (le carré avec une flèche vers le haut).</li>
+      <li>Descendez et touchez <b>Sur l'écran d'accueil</b>.</li>
+      <li>Touchez <b>Ajouter</b> en haut à droite.</li></ol></div>
+</div>
+{% endblock %}

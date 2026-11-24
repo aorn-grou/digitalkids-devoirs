@@ -1,40 +1,46 @@
 {% extends "base.html" %}
 {% block titre %}Tableau des notes · Digital Kids{% endblock %}
 {% block ruban %}{% set actif = 'tableau' %}{% include '_nav.html' %}{% endblock %}
-{% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
 {% block contenu %}
 <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
   <div><h1 class="titre-page">Tableau des notes</h1><p class="sous">Moyenne sur 20 de chaque élève pour chaque devoir. Cliquez sur un prénom pour voir le détail.</p></div>
-  <a class="btn petit bleu" href="{{ url_for('notes_csv') }}">Télécharger les notes (Excel / CSV)</a>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">{% include '_filtre.html' %}
+  <a class="btn petit bleu" href="{{ url_for('notes_csv', **({'classe': classe_choisie} if classe_choisie else {})) }}">Télécharger les notes (Excel / CSV)</a></div>
 </div>
+{% if role == 'admin' and not classes %}<div class="flash">Créez d'abord les classes : <a href="{{ url_for('profs') }}">Animateurs & classes</a>.</div>{% endif %}
 <div class="grille-admin" style="margin-top:16px">
   <div class="carte">
     <h2 style="color:var(--nuit)">Dernières activités</h2>
-    {% for l in recents %}<div class="evt"><span class="h">{{ l.date[5:16]|replace('-', '/')|replace(' ', ' · ') }}</span><span><b>{{ l.prenom or '?' }}</b> · {{ {'connexion':'connexion','inscription':'nouveau compte','debut':'a commencé un devoir','exercice':l.detail,'fini':'a terminé · ' ~ l.detail}.get(l.type, l.type) }}</span></div>
+    {% for l in recents %}<div class="evt"><span class="h">{{ l.date[8:10] }}/{{ l.date[5:7] }} · {{ l.date[11:16] }}</span><span><b>{{ l.prenom or '?' }}</b> · {{ {'connexion':'connexion','inscription':'nouveau compte','debut':'a commencé un devoir','exercice':l.detail,'fini':'a terminé · ' ~ l.detail}.get(l.type, l.type) }}</span></div>
     {% else %}<p class="aide">Aucune activité pour l'instant.</p>{% endfor %}
-    <a class="btn petit bleu" href="{{ url_for('rapports') }}" style="margin-top:10px">Voir le rapport complet</a>
+    <a class="btn petit bleu" href="{{ url_for('rapports', **({'classe': classe_choisie} if classe_choisie else {})) }}" style="margin-top:10px">Voir le rapport complet</a>
   </div>
+  {% if role == 'admin' %}
   <form class="carte" method="post" action="{{ url_for('basculer_inscriptions') }}" style="display:grid;gap:10px;align-content:start">
     <h2 style="color:var(--nuit)">Comptes créés par les élèves</h2>
-    <p style="margin:0">{% if inscriptions %}<span class="chip vert">ouvert</span> Les élèves peuvent créer leur compte eux-mêmes (prénom + code + niveau).{% else %}<span class="chip gris">fermé</span> Seul l'animateur peut créer les comptes.{% endif %}</p>
+    <p style="margin:0">{% if inscriptions %}<span class="chip vert">ouvert</span> Les élèves peuvent créer leur compte eux-mêmes (prénom + code + classe + niveau).{% else %}<span class="chip gris">fermé</span> Seuls les animateurs peuvent créer les comptes.{% endif %}</p>
     <button class="btn petit {{ 'gris' if inscriptions else '' }}">{{ 'Fermer les inscriptions' if inscriptions else 'Ouvrir les inscriptions' }}</button>
   </form>
+  {% else %}
+  <div class="carte" style="display:grid;gap:10px;align-content:start">
+    <h2 style="color:var(--nuit)">Ma classe</h2>
+    <p style="margin:0">{{ eleves|length }} élève(s). Les élèves choisissent « {{ moi }} » quand ils créent leur compte.</p>
+    <a class="btn petit" href="{{ url_for('eleves') }}">Ajouter des élèves</a>
+  </div>
+  {% endif %}
 </div>
-{% if not eleves %}<div class="carte" style="margin-top:18px"><h2>Aucun élève pour l'instant</h2><p>Commencez par <a href="{{ url_for('eleves') }}">ajouter vos élèves</a> : le logiciel crée leur identifiant et leur code.</p></div>{% endif %}
-{% for niv in [1, 2, 3] %}
-{% set els = eleves|selectattr('niveau', 'equalto', niv)|list %}
-{% set dvs = devoirs|selectattr('niveau', 'equalto', niv)|list %}
-{% if els %}
-<h2 style="margin:24px 0 10px;color:var(--bleu)">Niveau {{ niv }} · {{ els|length }} élève(s)</h2>
+{% if not eleves %}<div class="carte" style="margin-top:18px"><h2>Aucun élève pour l'instant</h2><p>Les élèves peuvent créer leur compte eux-mêmes, ou vous pouvez <a href="{{ url_for('eleves') }}">les ajouter</a>.</p></div>{% endif %}
+{% for gp in groupes %}
+<h2 style="margin:24px 0 10px;color:var(--bleu)">{{ gp.titre }} · {{ gp.eleves|length }} élève(s)</h2>
 <div class="defile"><table class="tableau-notes">
-  <tr><th>Élève</th><th>Code</th><th>Dernière connexion</th>{% for d in dvs %}<th>{{ d.titre|truncate(34) }}</th>{% endfor %}</tr>
-  {% for e in els %}<tr>
+  <tr><th>Élève</th><th>Code</th><th>Dernière connexion</th>{% for d in gp.devoirs %}<th>{{ d.titre|truncate(34) }}</th>{% endfor %}</tr>
+  {% for e in gp.eleves %}<tr>
     <td><a href="{{ url_for('eleve_detail', eid=e.id) }}"><b>{{ e.prenom }}</b></a></td><td><code>{{ e.code }}</code></td><td>{% set dc = derniere.get(e.id) %}{{ (dc[8:10] ~ "/" ~ dc[5:7] ~ " à " ~ dc[11:16]) if dc else "jamais" }}</td>
-    {% for d in dvs %}{% set n = notes.get((e.id, d.id)) %}
+    {% for d in gp.devoirs %}{% set n = notes.get((e.id, d.id)) %}
       <td>{% if n %}<span class="chip {{ 'vert' if n[1] >= 14 else ('orange' if n[1] >= 10 else 'rouge') }}">{{ n[1] }}/20</span> <span class="aide">{{ n[0] }}/{{ nb_ex[d.id] }}</span>{% else %}<span class="chip gris">pas fait</span>{% endif %}</td>
     {% endfor %}
   </tr>{% endfor %}
 </table></div>
-{% endif %}
 {% endfor %}
 {% endblock %}

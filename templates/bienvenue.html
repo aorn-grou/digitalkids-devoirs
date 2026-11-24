@@ -5,7 +5,7 @@
 <div class="carte" style="max-width:640px;margin:0 auto;text-align:center;display:grid;gap:14px">
   <div style="font-size:54px">🎉</div>
   <h1 style="font-size:34px;color:var(--nuit)">Bienvenue {{ eleve.prenom }} !</h1>
-  <p style="font-size:18px;margin:0">Ton compte est créé pour le <b>niveau {{ eleve.niveau }}</b>.</p>
+  <p style="font-size:18px;margin:0">Ton compte est créé pour le <b>niveau {{ eleve.niveau }}</b>{% if prof %}, dans la classe <b>{{ prof.classe }}</b> avec {{ prof.nom }}{% endif %}.</p>
   <div class="memo">
     <p style="margin:0 0 6px;font-weight:800">Pour revenir la prochaine fois, retiens bien :</p>
     <p style="margin:0">Mon prénom : <b>{{ eleve.prenom }}</b></p>

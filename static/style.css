@@ -224,3 +224,14 @@ table.gridtab th{background:var(--ciel2);border-color:var(--bord)}
 .evt .h{font-variant-numeric:tabular-nums;font-weight:800;color:var(--bleu);min-width:68px}
 .evt-fini{background:#EAFBEF}
 @media (max-width:720px){.niveaux{grid-template-columns:1fr}}
+
+/* ---- application installable, classes, admin ---- */
+.btn-installer{display:inline-flex;align-items:center;gap:6px;background:var(--orange);color:#fff;text-decoration:none;font-weight:800;border-radius:999px;padding:8px 14px;font-size:15px;box-shadow:0 3px 0 rgba(0,0,0,.18)}
+.btn-installer:hover{filter:brightness(1.07)}
+.installer-aide ol{margin:8px 0 0;padding-left:22px;display:grid;gap:6px;font-size:16px}
+.pastille.admin{background:var(--jaune);color:var(--nuit)}
+.moi{font-weight:800}
+.filtre-classe{display:flex;gap:8px;align-items:center;font-weight:800}
+.filtre-classe select{min-width:200px}
+@media (max-width:640px){.btn-installer{padding:7px 10px;font-size:13px}}
+.qui{flex-wrap:wrap;justify-content:flex-end}

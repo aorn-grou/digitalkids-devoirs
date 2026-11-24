@@ -1,33 +1,37 @@
 {% extends "base.html" %}
 {% block titre %}Devoirs · Digital Kids{% endblock %}
 {% block ruban %}{% set actif = 'devoirs_admin' %}{% include '_nav.html' %}{% endblock %}
-{% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
 {% block contenu %}
-<h1 class="titre-page">Devoirs</h1>
-<p class="sous">Un devoir « en ligne » est visible par tous les élèves de son niveau. Les notes sont gardées même si vous le retirez.</p>
+<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end"><h1 class="titre-page">Devoirs</h1>{% include '_filtre.html' %}</div>
+<p class="sous">Chaque classe a ses propres devoirs. Un devoir « en ligne » est visible par les élèves de sa classe et de son niveau. Les notes sont gardées même si vous le retirez.</p>
 <div class="grille-admin" style="margin-top:16px">
   <form class="carte" method="post" enctype="multipart/form-data" style="display:grid;gap:10px">
     <h2 style="color:var(--nuit)">Ajouter le devoir de la semaine</h2>
     <p class="aide" style="margin:0">Choisissez le fichier <b>.json</b> du nouveau devoir (celui que Claude vous prépare), puis cliquez sur Ajouter.</p>
     <input type="hidden" name="action" value="televerser">
+    {% if role == 'admin' %}<label>Pour quelle classe ?</label><select name="cible" aria-label="Classe">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if classe_choisie == c.id|string }}>{{ c.classe }} · {{ c.nom }}</option>{% endfor %}{% if classes %}<option value="toutes">Toutes les classes</option>{% else %}<option value="">Sans classe</option>{% endif %}</select>{% endif %}
+    <input type="hidden" name="classe_filtre" value="{{ classe_choisie }}">
     <input type="file" name="fichier" accept=".json,application/json" required aria-label="Fichier du devoir">
     <button class="btn">Ajouter le devoir</button>
   </form>
   <form class="carte" method="post" style="display:grid;gap:10px;align-content:start">
     <h2 style="color:var(--nuit)">Depuis GitHub</h2>
     <p class="aide" style="margin:0">Si le devoir a été ajouté dans le dossier <code>devoirs/</code> du projet (après la mise à jour), cliquez ici pour l'importer.</p>
+    {% if role == 'admin' %}<label>Pour quelle classe ?</label><select name="cible" aria-label="Classe">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if classe_choisie == c.id|string }}>{{ c.classe }} · {{ c.nom }}</option>{% endfor %}{% if classes %}<option value="toutes">Toutes les classes</option>{% else %}<option value="">Sans classe</option>{% endif %}</select>{% endif %}
+    <input type="hidden" name="classe_filtre" value="{{ classe_choisie }}">
     <input type="hidden" name="action" value="importer"><button class="btn bleu">Importer les devoirs du dossier</button>
   </form>
 </div>
 <div class="defile" style="margin-top:18px"><table class="tableau-notes">
-  <tr><th>Niveau</th><th>Devoir</th><th>Exercices</th><th>Élèves qui ont commencé</th><th>État</th><th></th></tr>
+  <tr>{% if role == 'admin' %}<th>Classe</th>{% endif %}<th>Niveau</th><th>Devoir</th><th>Exercices</th><th>Élèves qui ont commencé</th><th>État</th><th></th></tr>
   {% for x in devoirs %}<tr>
-    <td>{{ x.r.niveau }}</td><td><b>{{ x.r.titre }}</b><br><span class="aide">{{ x.r.semaine }} · {{ x.r.id }}</span></td><td>{{ x.nb }}</td><td>{{ x.eleves }}</td>
+    {% if role == 'admin' %}<td>{{ x.classe }}</td>{% endif %}<td>{{ x.r.niveau }}</td><td><b>{{ x.r.titre }}</b><br><span class="aide">{{ x.r.semaine }}</span></td><td>{{ x.nb }}</td><td>{{ x.eleves }}</td>
     <td>{% if x.r.actif %}<span class="chip vert">en ligne</span>{% else %}<span class="chip gris">retiré</span>{% endif %}</td>
     <td style="white-space:nowrap">
       <a class="btn petit gris" href="{{ url_for('apercu', devoir_id=x.r.id) }}">Aperçu</a>
-      <form method="post" style="display:inline"><input type="hidden" name="action" value="actif"><input type="hidden" name="devoir" value="{{ x.r.id }}"><button class="btn petit bleu">{{ 'Retirer' if x.r.actif else 'Mettre en ligne' }}</button></form>
-      <form method="post" style="display:inline" onsubmit="return this.querySelector('input[name=ok]').checked"><input type="hidden" name="action" value="supprimer"><input type="hidden" name="devoir" value="{{ x.r.id }}"><label class="aide"><input type="checkbox" name="ok"> sûr</label> <button class="btn petit rouge">Supprimer</button></form>
+      <form method="post" style="display:inline"><input type="hidden" name="action" value="actif"><input type="hidden" name="devoir" value="{{ x.r.id }}"><input type="hidden" name="classe_filtre" value="{{ classe_choisie }}"><button class="btn petit bleu">{{ 'Retirer' if x.r.actif else 'Mettre en ligne' }}</button></form>
+      <form method="post" style="display:inline" onsubmit="return this.querySelector('input[name=ok]').checked"><input type="hidden" name="action" value="supprimer"><input type="hidden" name="devoir" value="{{ x.r.id }}"><input type="hidden" name="classe_filtre" value="{{ classe_choisie }}"><label class="aide"><input type="checkbox" name="ok"> sûr</label> <button class="btn petit rouge">Supprimer</button></form>
     </td></tr>{% endfor %}
 </table></div>
 {% endblock %}

@@ -6,8 +6,15 @@
 <title>{% block titre %}Digital Kids · Devoirs{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=3">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
 <link rel="icon" href="{{ url_for('static', filename='robot.svg') }}">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0B47C4">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Digital Kids">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 <header class="bandeau">
@@ -21,7 +28,7 @@
         <path d="M26 42h12" stroke="#39D0FF" stroke-width="2.4" stroke-linecap="round"/></svg>
       <span><span class="nom">DIGITAL <b>KIDS</b></span><br><span class="lieu">ANJANAHARY</span></span>
     </a>
-    <div class="qui">{% block qui %}{% endblock %}</div>
+    <div class="qui"><a class="btn-installer" href="{{ url_for('installer') }}" data-installer hidden>📲 Installer l'application</a>{% block qui %}{% endblock %}</div>
   </div>
 </header>
 <div class="ruban"><div class="wrap">{% block ruban %}<span>LE NUMÉRIQUE DES ENFANTS · Apprendre · Créer · Comprendre · S'amuser</span>{% endblock %}</div></div>
@@ -33,6 +40,7 @@
   <span><b>Digital Kids Anjanahary</b> · Le numérique des enfants, coding &amp; robotique</span>
   <span>Anjanahary, arrêt de bus Gerichard · <b>034 93 823 59</b></span>
 </div></footer>
+<script src="{{ url_for('static', filename='installer.js') }}?v=1"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

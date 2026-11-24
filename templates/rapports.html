@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 {% block titre %}Rapport · Digital Kids{% endblock %}
 {% block ruban %}{% set actif = 'rapports' %}{% include '_nav.html' %}{% endblock %}
-{% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
 {% block contenu %}
 <meta http-equiv="refresh" content="60">
 <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
   <div><h1 class="titre-page">Rapport du {{ jour[8:10] }}/{{ jour[5:7] }}/{{ jour[:4] }}</h1>
   <p class="sous">Heure de Madagascar. La page se met à jour toute seule chaque minute.</p></div>
-  <form method="get" style="display:flex;gap:8px;align-items:center">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">{% include '_filtre.html' %}<form method="get" style="display:flex;gap:8px;align-items:center">{% if classe_choisie %}<input type="hidden" name="classe" value="{{ classe_choisie }}">{% endif %}
     <select name="jour" aria-label="Choisir le jour" onchange="this.form.submit()">
       {% if jour not in jours %}<option value="{{ jour }}">{{ jour[8:10] }}/{{ jour[5:7] }}/{{ jour[:4] }}</option>{% endif %}
       {% for j in jours %}<option value="{{ j }}" {{ 'selected' if j == jour }}>{{ j[8:10] }}/{{ j[5:7] }}/{{ j[:4] }}</option>{% endfor %}
     </select>
-  </form>
+  </form></div>
 </div>
 
 <h2 style="margin:22px 0 10px;color:var(--bleu)">Les élèves ce jour-là ({{ resume|length }})</h2>
 {% if not resume %}<div class="carte"><p style="margin:0">Aucune activité ce jour-là. Dès qu'un élève se connecte, il apparaît ici.</p></div>
 {% else %}
 <div class="defile"><table class="tableau-notes">
-  <tr><th>Élève</th><th>Code</th><th>Niveau</th><th>1re connexion</th><th>Dernière activité</th><th>Exercices validés</th><th>Devoir terminé</th></tr>
+  <tr><th>Élève</th><th>Code</th>{% if role == 'admin' %}<th>Classe</th>{% endif %}<th>Niveau</th><th>1re connexion</th><th>Dernière activité</th><th>Exercices validés</th><th>Devoir terminé</th></tr>
   {% for r in resume %}<tr>
     <td><a href="{{ url_for('eleve_detail', eid=r.id) }}"><b>{{ r.prenom }}</b></a><br><span class="aide">{{ r.identifiant }}</span></td>
-    <td><code>{{ r.code }}</code></td><td>{{ r.niveau }}</td>
+    <td><code>{{ r.code }}</code></td>{% if role == 'admin' %}<td>{{ r.classe }}</td>{% endif %}<td>{{ r.niveau }}</td>
     <td>{{ r.premiere[11:16] }}</td><td>{{ r.derniere[11:16] }}</td><td>{{ r.exercices }}</td>
     <td>{% if r.fini %}<span class="chip vert">✓ à {{ r.fini[0][11:16] }}</span><br><span class="aide">{{ r.fini[1] }}</span>{% else %}<span class="chip gris">pas encore</span>{% endif %}</td>
   </tr>{% endfor %}
@@ -35,7 +35,7 @@
   <div class="evt evt-{{ l.type }}">
     <span class="h">{{ l.date[11:19] }}</span>
     <span class="ic">{{ {'connexion':'🔑','inscription':'✨','debut':'▶️','exercice':'✏️','fini':'🏁'}.get(l.type, '•') }}</span>
-    <span><b>{{ l.prenom or 'Élève supprimé' }}</b>
+    <span><b>{{ l.prenom or 'Élève supprimé' }}</b>{% if role == 'admin' and l.classe_id in noms %} <span class="chip gris">{{ noms[l.classe_id].classe }}</span>{% endif %}
       {% if l.type == 'connexion' %}s'est connecté(e) · niveau {{ l.niveau }} · code {{ l.code }}
       {% elif l.type == 'inscription' %}a créé son compte · {{ l.detail }} · code {{ l.code }}
       {% elif l.type == 'debut' %}a commencé : {{ l.detail }}

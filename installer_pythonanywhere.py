@@ -110,7 +110,8 @@ def main():
     print(" ✓ C'EST EN LIGNE !")
     print(f"   Élèves     : https://{DOMAINE}")
     print(f"   Animateur  : https://{DOMAINE}/animateur")
-    print("   (à la première visite de /animateur, vous créez votre mot de passe)")
+    print("   Administrateur : identifiant  admin  + votre mot de passe")
+    print("   Puis menu « Animateurs & classes » pour créer les animateurs.")
     print("=" * 60)
 
 

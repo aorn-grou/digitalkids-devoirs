@@ -1,14 +1,17 @@
 {% extends "base.html" %}
 {% block titre %}{{ e.prenom }} · Digital Kids{% endblock %}
 {% block ruban %}{% set actif = 'eleves' %}{% include '_nav.html' %}{% endblock %}
-{% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
 {% block contenu %}
 <h1 class="titre-page">{{ e.prenom }}</h1>
-<p class="sous">Identifiant <b>{{ e.identifiant }}</b> · code <b>{{ e.code }}</b> · niveau <b>{{ e.niveau }}</b></p>
+<p class="sous">Identifiant <b>{{ e.identifiant }}</b> · code <b>{{ e.code }}</b> · niveau <b>{{ e.niveau }}</b> · classe <b>{{ (prof.classe ~ " · " ~ prof.nom) if prof else "aucune" }}</b></p>
 <div class="carte" style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
   <form method="post" style="display:flex;gap:8px;align-items:center"><input type="hidden" name="action" value="niveau">
-    <select name="niveau" aria-label="Niveau">{% for n in [1,2,3] %}<option value="{{ n }}" {{ 'selected' if n == e.niveau }}>Niveau {{ n }}</option>{% endfor %}</select>
+    <select name="niveau" aria-label="Niveau">{% for n in [1,2] %}<option value="{{ n }}" {{ 'selected' if n == e.niveau }}>Niveau {{ n }}</option>{% endfor %}</select>
     <button class="btn petit bleu">Changer le niveau</button></form>
+  {% if role == 'admin' %}<form method="post" style="display:flex;gap:8px;align-items:center"><input type="hidden" name="action" value="classe">
+    <select name="classe" aria-label="Classe">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if c.id == e.classe_id }}>{{ c.classe }} · {{ c.nom }}</option>{% endfor %}<option value="" {{ 'selected' if not e.classe_id }}>Sans classe</option></select>
+    <button class="btn petit bleu">Changer la classe</button></form>{% endif %}
   <form method="post"><input type="hidden" name="action" value="code"><button class="btn petit gris">Nouveau code</button></form>
   <form method="post" onsubmit="return this.querySelector('input[name=ok]').checked"><input type="hidden" name="action" value="supprimer">
     <label class="aide"><input type="checkbox" name="ok"> je confirme</label> <button class="btn petit rouge">Supprimer l'élève</button></form>
