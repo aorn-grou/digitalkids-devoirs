@@ -244,4 +244,14 @@ ni = A.app.test_client(); ni.post("/inscription", data={"prenom": "Zo", "code": 
 ok(tuple(con.execute("SELECT classe_id, creneau_id FROM eleves WHERE prenom='Zo'").fetchone()) == (ib, s10), "Zo s'inscrit samedi 10h → classe de Mme Lova")
 for p in ["/animateur/presence", "/animateur/presences", "/animateur/excel", "/animateur/accueil", f"/animateur/eleve/{ids['Mamy']}", "/animateur/eleves", "/animateur/profs"]:
     ok(c.get(p).status_code == 200, "page admin " + p)
+
+ok("Niveau 1" in c.get(f"/animateur/eleves?classe={ib}").get_data(as_text=True), "la page Élèves sépare niveau 1 et niveau 2")
+# ---- page « Insérer les élèves » (admin)
+ok("Insérer les listes d'élèves" in c.get("/animateur/accueil").get_data(as_text=True), "bouton vedette sur le tableau de bord admin")
+ok("Insérer les listes" not in pa.get("/animateur/accueil").get_data(as_text=True) and pa.get("/animateur/inserer").status_code == 403, "pas pour les animateurs")
+r = c.post("/animateur/inserer", data={"creneau": str(s14), "niveau": "1", "prenoms": "1. Rado Rakoto\n- Hanta\n\n  Mialy  \n"}, follow_redirects=True).get_data(as_text=True)
+ok("3 élève(s) ajouté(s)" in r, "insertion de 3 noms (numéros et tirets enlevés)")
+ok({x[0] for x in con.execute("SELECT prenom FROM eleves WHERE creneau_id=? AND niveau=1", (s14,))} >= {"Rado Rakoto", "Hanta", "Mialy"}, "les noms sont dans le bon cours, niveau 1")
+r = c.post("/animateur/inserer", data={"creneau": str(s14), "niveau": "1", "prenoms": "Hanta"}, follow_redirects=True).get_data(as_text=True)
+ok("1 déjà dans la liste" in r, "un nom déjà inséré n'est pas recréé")
 print("\nTOUS LES TESTS SONT PASSÉS")

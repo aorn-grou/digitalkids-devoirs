@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block titre %}Insérer les élèves · Digital Kids{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
+{% block contenu %}
+<h1 class="titre-page">Insérer les listes d'élèves</h1>
+<p class="sous">Une partie par animateur. Choisissez le cours, collez ou écrivez les noms (<b>un nom par ligne</b>), puis cliquez sur <b>Insérer</b>. Le niveau 1 est déjà choisi.</p>
+<div class="inserer-grille">
+{% for x in profs %}
+  <form method="post" class="carte inserer-carte" autocomplete="off">
+    <header class="inserer-tete"><span class="avatar">{{ x.p.nom.split()[-1][:1]|upper }}</span>
+      <div><h2>{{ x.p.nom }}</h2><p class="aide" style="margin:0">{{ x.p.classe }}</p></div></header>
+
+    <div class="etape-ins"><span class="num">1</span><b>Quel cours ?</b></div>
+    <div class="choix-pilules">
+      {% for c in x.cours %}<label class="pilule"><input type="radio" name="creneau" value="{{ c.id }}" required {{ 'checked' if (fait == c.id|string) or (loop.first and fait not in x.cours|map(attribute='id')|map('string')|list) }}>
+        <span><b>{{ c.horaire }}</b><small>{{ c.n1 }} en niveau 1 · {{ c.n2 }} en niveau 2</small></span></label>{% endfor %}
+    </div>
+
+    <div class="etape-ins"><span class="num">2</span><b>Quel niveau ?</b></div>
+    <div class="choix-pilules">
+      <label class="pilule petite"><input type="radio" name="niveau" value="1" checked><span><b>Niveau 1</b></span></label>
+      <label class="pilule petite"><input type="radio" name="niveau" value="2"><span><b>Niveau 2</b></span></label>
+    </div>
+
+    <div class="etape-ins"><span class="num">3</span><label for="t{{ x.p.id }}"><b>Les noms des élèves</b> <span class="aide">(un par ligne · vous pouvez coller depuis Excel ou WhatsApp)</span></label></div>
+    <textarea id="t{{ x.p.id }}" name="prenoms" rows="9" required placeholder="Rakoto Andry&#10;Rasoa Be&#10;Rabe Mamy&#10;…" oninput="compte(this)"></textarea>
+    <div class="inserer-pied"><span class="aide" data-compte>0 nom</span><button class="btn">➕ Insérer dans la liste de {{ x.p.nom }}</button></div>
+  </form>
+{% else %}
+  <div class="carte"><p style="margin:0">Aucun cours. Ajoutez les jours et heures dans <a href="{{ url_for('profs') }}">Animateurs & cours</a>.</p></div>
+{% endfor %}
+</div>
+<p style="margin-top:18px"><a class="btn petit gris" href="{{ url_for('eleves') }}">Voir toutes les listes (Élèves par cours) →</a></p>
+{% endblock %}
+{% block scripts %}<script>
+function compte(t){const n=t.value.split('\n').filter(l=>l.trim()).length;t.form.querySelector('[data-compte]').textContent=n+(n>1?' noms':' nom');}
+</script>{% endblock %}

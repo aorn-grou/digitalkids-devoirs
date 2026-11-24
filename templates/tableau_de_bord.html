@@ -7,6 +7,13 @@
   <div><h1 class="titre-page">Tableau de bord</h1><p class="sous">Aujourd'hui {{ aujourdhui|date_fr }} · chiffres du mois de {{ mois|mois_libelle }}.</p></div>
   {% include '_filtre.html' %}
 </div>
+{% if role == 'admin' %}
+<a class="hero-action" href="{{ url_for('inserer') }}">
+  <span class="hero-ic">➕</span>
+  <span class="hero-txt"><b>Insérer les listes d'élèves</b><small>Niveau 1 · une liste pour Prof Santatra, une liste pour Prof Toky</small></span>
+  <span class="hero-fleche">→</span>
+</a>
+{% endif %}
 {% if role == 'admin' and not nb_cours %}<div class="flash">Pour commencer : menu <a href="{{ url_for('profs') }}">Animateurs & cours</a> → créez les 2 animateurs, puis leurs jours et heures de cours.</div>{% endif %}
 
 <div class="kpis">

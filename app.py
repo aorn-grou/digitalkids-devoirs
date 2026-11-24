@@ -832,6 +832,37 @@ def eleves():
     return render_template("eleves.html", eleves=liste, par_cours=par_cours, a_placer=a_placer, tous_cours=tous, noms=nom_classes())
 
 
+@app.route("/animateur/inserer", methods=["GET", "POST"])
+@animateur_requis
+@admin_requis
+def inserer():
+    """Page simple pour l'administrateur : coller la liste des élèves de chaque animateur."""
+    if request.method == "POST":
+        cr = creneau(request.form.get("creneau", ""))
+        niveau = int(request.form.get("niveau", "1")) if request.form.get("niveau") in ("1", "2") else 1
+        if not cr:
+            flash("Choisissez le jour et l'heure du cours.")
+            return redirect(url_for("inserer"))
+        n = m = 0
+        for ligne in request.form.get("prenoms", "").splitlines():
+            if ligne.strip(" -•\t0123456789.)"):
+                _, nouveau = ajouter_eleve(ligne.strip(" -•\t").lstrip("0123456789.) ").strip() or ligne, niveau, cr)
+                n += nouveau
+                m += not nouveau
+        db().commit()
+        flash(f"{cr['nom']} · {cr['horaire']} · niveau {niveau} : {n} élève(s) ajouté(s)" + (f", {m} déjà dans la liste" if m else "") + ".")
+        return redirect(url_for("inserer", fait=cr["id"]))
+    crs = tous_creneaux()
+    profs_ = []
+    for p in toutes_classes():
+        cours = [dict(c, n1=db().execute("SELECT COUNT(*) FROM eleves WHERE creneau_id=? AND niveau=1", (c["id"],)).fetchone()[0],
+                      n2=db().execute("SELECT COUNT(*) FROM eleves WHERE creneau_id=? AND niveau=2", (c["id"],)).fetchone()[0])
+                 for c in crs if c["classe_id"] == p["id"]]
+        if cours:
+            profs_.append({"p": p, "cours": cours})
+    return render_template("inserer.html", profs=profs_, fait=request.args.get("fait", ""))
+
+
 @app.route("/animateur/eleve/<int:eid>", methods=["GET", "POST"])
 @animateur_requis
 def eleve_detail(eid):

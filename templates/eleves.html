@@ -6,7 +6,7 @@
 <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end">
   <div><h1 class="titre-page">Élèves par cours</h1>
   <p class="sous">{% if role == 'admin' %}Écrivez les noms des élèves dans la carte de leur cours (jour et heure). La fiche d'appel de l'animateur se remplit toute seule.{% else %}Les élèves de vos cours. C'est l'administrateur qui ajoute les noms.{% endif %}</p></div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">{% include '_filtre.html' %}
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">{% if role == 'admin' %}<a class="btn" href="{{ url_for('inserer') }}">➕ Insérer les listes d'élèves</a>{% endif %}{% include '_filtre.html' %}
     <a class="btn petit gris" href="{{ url_for('fiches', **({'classe': classe_choisie} if classe_choisie else {})) }}">🖨 Fiches de connexion</a></div>
 </div>
 
@@ -34,9 +34,11 @@
       <span class="compteur">{{ x.eleves|length }}<small>élève{{ 's' if x.eleves|length > 1 }}</small></span>
     </header>
     {% if x.eleves %}
+    {% for niv in [1, 2, 3] %}{% set els = x.eleves|selectattr('niveau', 'equalto', niv)|list %}{% if els %}
+    <div class="niv-titre">Niveau {{ niv }} <span>{{ els|length }}</span></div>
     <ol class="liste-noms">
-      {% for e in x.eleves %}<li><a href="{{ url_for('eleve_detail', eid=e.id) }}">{{ e.prenom }}</a><span class="aide">niv. {{ e.niveau }} · <code>{{ e.identifiant }}</code> · code <code>{{ e.code }}</code></span></li>{% endfor %}
-    </ol>
+      {% for e in els %}<li><a href="{{ url_for('eleve_detail', eid=e.id) }}">{{ e.prenom }}</a><span class="aide"><code>{{ e.identifiant }}</code> · code <code>{{ e.code }}</code></span></li>{% endfor %}
+    </ol>{% endif %}{% endfor %}
     {% else %}<p class="vide">Aucun élève pour l'instant.</p>{% endif %}
     {% if role == 'admin' %}
     <form method="post" class="ajout-noms">
