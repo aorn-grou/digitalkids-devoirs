@@ -1,7 +1,7 @@
 // Digital Kids · application installable. Le réseau d'abord (les notes sont toujours à jour),
 // une copie des fichiers fixes pour démarrer plus vite, et une page « pas de connexion ».
-const CACHE = "dk-v1";
-const FIXES = ["/static/style.css", "/static/devoir.js", "/static/robot.svg", "/static/icone-192.png"];
+const CACHE = "dk-v2";
+const FIXES = ["/static/style.css", "/static/devoir.js", "/static/robot.svg", "/static/icone-192.png", "/static/ui.js"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FIXES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));

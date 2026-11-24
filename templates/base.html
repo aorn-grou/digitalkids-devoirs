@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>{% block titre %}Digital Kids · Devoirs{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=7">
 <link rel="icon" href="{{ url_for('static', filename='robot.svg') }}">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0B47C4">
@@ -31,7 +31,7 @@
     <div class="qui"><a class="btn-installer" href="{{ url_for('installer') }}" data-installer hidden>📲 Installer l'application</a>{% block qui %}{% endblock %}</div>
   </div>
 </header>
-<div class="ruban"><div class="wrap">{% block ruban %}<span>LE NUMÉRIQUE DES ENFANTS · Apprendre · Créer · Comprendre · S'amuser</span>{% endblock %}</div></div>
+<div class="ruban{{ ' ruban-admin' if role in ('admin', 'prof') and request.path.startswith('/animateur/') }}"><div class="wrap">{% block ruban %}<span>LE NUMÉRIQUE DES ENFANTS · Apprendre · Créer · Comprendre · S'amuser</span>{% endblock %}</div></div>
 <main><div class="wrap">
   {% with messages = get_flashed_messages() %}{% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
   {% block contenu %}{% endblock %}
@@ -41,6 +41,7 @@
   <span>Anjanahary, arrêt de bus Gerichard · <b>034 93 823 59</b></span>
 </div></footer>
 <script src="{{ url_for('static', filename='installer.js') }}?v=1"></script>
+<script src="{{ url_for('static', filename='ui.js') }}?v=1" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
