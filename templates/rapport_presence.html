@@ -1,15 +1,20 @@
 {% extends "base.html" %}
+{% from "_calendrier.html" import calendrier %}
 {% block titre %}Rapport de présence · Digital Kids{% endblock %}
 {% block ruban %}{% set actif = 'rapport_presence' %}{% include '_nav.html' %}{% endblock %}
 {% block qui %}{% include '_qui.html' %}{% endblock %}
 {% block contenu %}
 <div class="no-print" style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
   <div><h1 class="titre-page">Rapport de présence · {{ mois|mois_libelle }}</h1>
-  <p class="sous">Calculé tout seul à partir des fiches. P = présent · R = retard (compté présent) · A = absent · ? = fiche faite mais élève pas coché · vide = fiche pas faite.</p></div>
+  <p class="sous">Calculé tout seul à partir des fiches d'appel des animateurs.</p>
+  <div class="legende"><span class="cal-j st-P">P</span> présent <span class="cal-j st-R">R</span> retard (compté présent) <span class="cal-j st-A">A</span> absent <span class="cal-j prevu">·</span> cours prévu, fiche pas faite <span class="cal-j st-?">?</span> pas coché</div></div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     {% include '_filtre.html' %}
     <form method="get" style="display:flex;gap:8px;align-items:center">{% if classe_choisie %}<input type="hidden" name="classe" value="{{ classe_choisie }}">{% endif %}
-      <label for="mois"><b>Mois :</b></label><input type="month" id="mois" name="mois" value="{{ mois }}" onchange="this.form.submit()"></form>
+      {% if vue == 'tableau' %}<input type="hidden" name="vue" value="tableau">{% endif %}
+      <label for="mois"><b>Mois :</b></label><select id="mois" name="mois" onchange="this.form.submit()">{% for v, t in liste_mois() %}<option value="{{ v }}" {{ 'selected' if v == mois }}>{{ t|capitalize }}</option>{% endfor %}{% if mois not in liste_mois()|map(attribute=0)|list %}<option value="{{ mois }}" selected>{{ mois|mois_libelle|capitalize }}</option>{% endif %}</select></form>
+    {% set kv = {'mois': mois, 'classe': classe_choisie} if classe_choisie else {'mois': mois} %}
+    <div class="bascule" role="tablist"><a href="{{ url_for('rapport_presence', vue='calendrier', **kv) }}" class="{{ 'on' if vue == 'calendrier' }}">📅 Calendrier</a><a href="{{ url_for('rapport_presence', vue='tableau', **kv) }}" class="{{ 'on' if vue == 'tableau' }}">▦ Tableau</a></div>
     <a class="btn petit bleu" href="{{ url_for('excel_presences', mois=mois, **({'classe': classe_choisie} if classe_choisie else {})) }}">⬇ Excel</a>
     <button class="btn petit gris" onclick="window.print()">Imprimer</button>
   </div>
@@ -21,7 +26,18 @@
     <h2 style="color:var(--nuit)">{{ x.c.classe }} · {{ x.c.horaire }} <span class="aide">· {{ x.c.nom }}</span></h2>
     <span class="aide">{{ x.faites|length }} cours fait(s) sur {{ x.dates|length }} ce mois</span>
   </div>
-  {% if not x.lignes %}<p class="aide">Aucun élève dans ce cours.</p>{% else %}
+  {% if not x.lignes %}<p class="aide">Aucun élève dans ce cours.</p>{% elif vue == 'calendrier' %}
+  <div class="cal-grille">
+    {% for l in x.lignes %}
+    <div class="cal-eleve{% if l.parti %} parti{% endif %}">
+      <div class="cal-eleve-tete"><a href="{{ url_for('eleve_detail', eid=l.e.id) }}"><b>{{ l.e.prenom }}</b></a>
+        {% if l.taux is not none %}<span class="chip {{ 'vert' if l.taux >= 80 else ('orange' if l.taux >= 60 else 'rouge') }}">{{ l.taux }} %</span>{% endif %}</div>
+      <div class="aide">Présent <b>{{ l.presents }}</b> fois{% if l.retards %} (dont {{ l.retards }} retard){% endif %} · absent <b>{{ l.absents }}</b> fois{% if l.parti %} · a changé de cours{% endif %}</div>
+      {{ calendrier(mois, l.par_date, x.dates) }}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
   <div class="defile" style="margin-top:8px"><table class="tableau-notes grille-presence">
     <tr><th>Élève</th>{% for d in x.dates %}<th>{{ d[8:10] }}/{{ d[5:7] }}{% if d not in x.faites %}<br><small>pas faite</small>{% endif %}</th>{% endfor %}<th>Présent</th><th>Absent</th><th>Taux</th></tr>
     {% for l in x.lignes %}<tr {% if l.parti %}class="parti"{% endif %}>

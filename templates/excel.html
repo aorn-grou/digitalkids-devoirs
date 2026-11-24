@@ -9,7 +9,7 @@
     <h2 style="color:var(--nuit)">⬇ Fiches de présence</h2>
     <p class="aide" style="margin:0">Un fichier Excel avec <b>une feuille par cours</b> (ex. Classe A · Mercredi 14h-16h) : les élèves, les dates du mois, P / R / A, et les totaux.</p>
     {% if classe_choisie %}<input type="hidden" name="classe" value="{{ classe_choisie }}">{% endif %}
-    <label for="mois">Mois</label><input type="month" id="mois" name="mois" value="{{ mois }}">
+    <label for="mois">Mois</label><select id="mois" name="mois">{% for v, t in liste_mois() %}<option value="{{ v }}" {{ 'selected' if v == mois }}>{{ t|capitalize }}</option>{% endfor %}</select>
     <button class="btn bleu">Télécharger les présences</button>
   </form>
   <div class="carte" style="display:grid;gap:10px;align-content:start">

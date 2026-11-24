@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_calendrier.html" import calendrier %}
 {% block titre %}{{ e.prenom }} · Digital Kids{% endblock %}
 {% block ruban %}{% set actif = 'eleves' %}{% include '_nav.html' %}{% endblock %}
 {% block qui %}{% include '_qui.html' %}{% endblock %}
@@ -28,16 +29,19 @@
     <label class="aide"><input type="checkbox" name="ok"> je confirme</label> <button class="btn petit rouge">Supprimer l'élève</button></form>{% endif %}
 </div>
 
-<h2 style="margin:22px 0 10px;color:var(--bleu)">Présences</h2>
+<h2 style="margin:22px 0 10px;color:var(--bleu)">Calendrier de présence</h2>
+<div class="legende" style="margin-bottom:8px"><span class="cal-j st-P">P</span> présent <span class="cal-j st-R">R</span> retard <span class="cal-j st-A">A</span> absent</div>
+<div class="cal-grille">
 {% for m in mois_pres %}
-<div class="carte" style="margin-top:10px">
+<div class="carte" style="margin-top:0">
   <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
     <b style="text-transform:capitalize">{{ m.mois|mois_libelle }}</b>
     <span>Présent <b>{{ m.P + m.R }}</b> fois · absent <b>{{ m.A }}</b> fois {% if m.taux is not none %}<span class="chip {{ 'vert' if m.taux >= 80 else ('orange' if m.taux >= 60 else 'rouge') }}">{{ m.taux }} %</span>{% endif %}</span>
   </div>
-  <div class="pastilles-dates">{% for x in m.dates|reverse %}<span class="st st-{{ x.statut }}" title="{{ noms_cr[x.creneau_id].horaire if x.creneau_id in noms_cr else '' }}">{{ x.date[8:10] }}/{{ x.date[5:7] }} {{ x.statut }}</span>{% endfor %}</div>
+  <div class="cal-seul">{{ calendrier(m.mois, m.par_date, []) }}</div>
 </div>
 {% else %}<div class="carte"><p class="aide" style="margin:0">Aucune fiche de présence pour cet élève pour l'instant.</p></div>{% endfor %}
+</div>
 
 <h2 style="margin:22px 0 10px;color:var(--bleu)">Devoirs en ligne</h2>
 {% for r in resultats %}

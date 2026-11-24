@@ -199,7 +199,9 @@ bad = (A.aujourdhui() - __import__("datetime").timedelta(days=(A.aujourdhui().we
 ok(pa.get(f"/animateur/presence?creneau={mer}&date={bad}").status_code == 302, "une date qui n'est pas un mercredi est refusée")
 mois = mer_dates[0][:7]
 rap = c.get(f"/animateur/presences?mois={mois}").get_data(as_text=True)
-ok("Rapport de présence" in rap and "Andry Rakoto" in rap and "Mercredi 14h-16h" in rap, "rapport de présence du mois")
+ok("Rapport de présence" in rap and "Andry Rakoto" in rap and "Mercredi 14h-16h" in rap and 'class="cal"' in rap, "rapport de présence du mois (calendrier par élève)")
+ok("grille-presence" in c.get(f"/animateur/presences?mois={mois}&vue=tableau").get_data(as_text=True), "rapport de présence en tableau")
+ok('type="month"' not in rap and 'type="month"' not in c.get("/animateur/excel").get_data(as_text=True), "pas de champ « mois » (incompatible Safari / Mac)")
 pres = A.app.test_request_context(f"/?mois={mois}")
 with A.app.test_request_context("/"):
     from flask import session as _s
@@ -213,7 +215,7 @@ with A.app.test_request_context("/"):
 ok("Andry" not in pb.get(f"/animateur/presences?mois={mois}").get_data(as_text=True), "Mme Lova ne voit pas le rapport de la classe A")
 r = c.get("/animateur/recherche?q=rakoto")
 ok(r.status_code == 302 and f"/animateur/eleve/{ids['Andry Rakoto']}" in r.headers["Location"], "recherche « rakoto » → fiche d'Andry directement")
-ok("Présences" in c.get(r.headers["Location"]).get_data(as_text=True), "la fiche élève montre les présences et les notes")
+fx = c.get(r.headers["Location"]).get_data(as_text=True); ok("Calendrier de présence" in fx and "cal-j st-" in fx and "Devoirs en ligne" in fx, "la fiche élève montre le calendrier de présence et les notes")
 ok("2 résultat(s)" in c.get("/animateur/recherche?q=a").get_data(as_text=True) or True, "recherche à plusieurs résultats")
 ok("Mamy" not in pb.get("/animateur/recherche?q=mamy").get_data(as_text=True).split("résultat(s)")[-1], "un animateur ne trouve pas les élèves d'une autre classe")
 x = c.get(f"/animateur/excel/presences.xlsx?mois={mois}")

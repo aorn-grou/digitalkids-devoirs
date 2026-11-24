@@ -1,6 +1,7 @@
 """Digital Kids Anjanahary · Devoirs en ligne
 Application Flask : élèves (compte, devoirs notés sur 20), animateurs (une classe chacun),
 administrateur (voit tout). Installable comme une application (PWA)."""
+import calendar
 import csv
 import io
 import json
@@ -394,6 +395,26 @@ app.jinja_env.filters["date_fr"] = date_fr
 app.jinja_env.filters["mois_libelle"] = mois_libelle
 app.jinja_env.filters["heure"] = heure
 app.jinja_env.globals["JOURS"] = JOURS
+
+
+def semaines_du_mois(mois):
+    """Les semaines du mois (lundi → dimanche) pour dessiner le calendrier de présence."""
+    a, m = map(int, mois.split("-"))
+    return [[(f"{a:04d}-{m:02d}-{d:02d}" if d else None) for d in sem] for sem in calendar.Calendar(0).monthdayscalendar(a, m)]
+
+
+def liste_mois(n=18):
+    """Les derniers mois, pour une liste de choix (le champ « mois » n'existe pas dans Safari sur Mac)."""
+    d = aujourdhui().replace(day=1)
+    out = []
+    for _ in range(n):
+        out.append((d.isoformat()[:7], mois_libelle(d.isoformat()[:7])))
+        d = (d - timedelta(days=1)).replace(day=1)
+    return out
+
+
+app.jinja_env.globals.update(semaines_du_mois=semaines_du_mois, liste_mois=liste_mois,
+                             aujourdhui_iso=lambda: aujourdhui().isoformat())
 
 
 @app.context_processor
@@ -872,6 +893,7 @@ def eleve_detail(eid):
         m = par_mois.setdefault(x["date"][:7], {"mois": x["date"][:7], "P": 0, "R": 0, "A": 0, "dates": []})
         m[x["statut"]] += 1
         m["dates"].append(x)
+        m.setdefault("par_date", {})[x["date"]] = x["statut"]
     mois = list(par_mois.values())
     for m in mois:
         m["taux"] = taux(m["P"] + m["R"], m["A"])
@@ -1054,7 +1076,7 @@ def calcul_presences(crs, mois):
             cases = [statuts.get((i, d), "?" if d in faites else "") for d in dates]
             p = sum(1 for x in cases if x in ("P", "R"))
             a = cases.count("A")
-            lignes.append({"e": e, "cases": cases, "presents": p, "retards": cases.count("R"), "absents": a, "taux": taux(p, a),
+            lignes.append({"e": e, "cases": cases, "par_date": dict(zip(dates, cases)), "presents": p, "retards": cases.count("R"), "absents": a, "taux": taux(p, a),
                            "parti": e["creneau_id"] != c["id"]})
         lignes.sort(key=lambda l: (l["parti"], l["e"]["prenom"].lower()))
         out.append({"c": c, "dates": dates, "faites": faites, "lignes": lignes,
@@ -1146,7 +1168,8 @@ def rapport_presence():
     if not re.fullmatch(r"\d{4}-\d{2}", mois):
         mois = aujourdhui().isoformat()[:7]
     pres = calcul_presences(creneaux_visibles(), mois)
-    return render_template("rapport_presence.html", pres=pres, mois=mois)
+    vue = "tableau" if request.args.get("vue") == "tableau" else "calendrier"
+    return render_template("rapport_presence.html", pres=pres, mois=mois, vue=vue)
 
 
 # ------------------------------------------------------------------ recherche

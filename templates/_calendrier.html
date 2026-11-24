@@ -1,0 +1,14 @@
+{% macro calendrier(mois, par_date, jours_cours) %}
+<div class="cal" role="grid" aria-label="Calendrier de présence {{ mois|mois_libelle }}">
+  {% for j in ['L','M','M','J','V','S','D'] %}<span class="cal-nom">{{ j }}</span>{% endfor %}
+  {% set auj = aujourdhui_iso() %}
+  {% for sem in semaines_du_mois(mois) %}{% for d in sem %}
+    {% if not d %}<span class="cal-j hors"></span>
+    {% else %}{% set st = par_date.get(d, '') %}
+      <span class="cal-j{% if st in ['P','R','A','?'] %} st-{{ st }}{% elif d in jours_cours %} prevu{% endif %}{% if d == auj %} auj{% endif %}"
+        title="{{ d|date_fr }} · {{ {'P':'présent','R':'en retard','A':'absent','?':'pas coché'}.get(st, 'cours prévu, fiche pas faite' if d in jours_cours else 'pas de cours') }}">
+        {{ d[8:]|int }}{% if st in ['P','R','A'] %}<i>{{ st }}</i>{% endif %}</span>
+    {% endif %}
+  {% endfor %}{% endfor %}
+</div>
+{% endmacro %}
