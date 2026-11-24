@@ -1,5 +1,5 @@
-{% set liens = [('tableau','Tableau des notes'),('rapports','Rapport'),('eleves','Élèves'),('devoirs_admin','Devoirs'),('fiches','Fiches de connexion')] %}
-{% if role == 'admin' %}{% set liens = liens + [('profs','Animateurs & classes')] %}{% endif %}
+{% set liens = [('tableau_de_bord','Tableau de bord'),('presence','Présences'),('rapport_presence','Rapport présences'),('tableau','Notes'),('rapports','Activité'),('eleves','Élèves'),('devoirs_admin','Devoirs'),('fiches','Fiches'),('excel','Excel')] %}
+{% if role == 'admin' %}{% set liens = liens + [('profs','Animateurs & cours')] %}{% endif %}
 {% set liens = liens + [('mot_de_passe','Mot de passe')] %}
 {% set ka = {'classe': classe_choisie} if (role == 'admin' and classe_choisie) else {} %}
-{% for ep, txt in liens %}<a {% if actif == ep %}class="on"{% endif %} href="{{ url_for(ep, **ka) }}">{{ txt }}{% if ep == 'rapports' and rapports_nouveaux %} <span class="badge-new">{{ rapports_nouveaux }}</span>{% endif %}</a>{% endfor %}
+<nav class="nav-admin">{% for ep, txt in liens %}<a {% if actif == ep %}class="on"{% endif %} href="{{ url_for(ep, **ka) }}">{{ txt }}{% if ep == 'rapports' and rapports_nouveaux %} <span class="badge-new">{{ rapports_nouveaux }}</span>{% endif %}</a>{% endfor %}</nav>

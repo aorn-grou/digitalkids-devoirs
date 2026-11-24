@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block titre %}Excel · Digital Kids{% endblock %}
+{% block ruban %}{% set actif = 'excel' %}{% include '_nav.html' %}{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
+{% block contenu %}
+<h1 class="titre-page">Importer / exporter avec Excel</h1>
+<div class="grille-admin" style="margin-top:16px;align-items:start">
+  <form class="carte" method="get" action="{{ url_for('excel_presences') }}" style="display:grid;gap:10px">
+    <h2 style="color:var(--nuit)">⬇ Fiches de présence</h2>
+    <p class="aide" style="margin:0">Un fichier Excel avec <b>une feuille par cours</b> (ex. Classe A · Mercredi 14h-16h) : les élèves, les dates du mois, P / R / A, et les totaux.</p>
+    {% if classe_choisie %}<input type="hidden" name="classe" value="{{ classe_choisie }}">{% endif %}
+    <label for="mois">Mois</label><input type="month" id="mois" name="mois" value="{{ mois }}">
+    <button class="btn bleu">Télécharger les présences</button>
+  </form>
+  <div class="carte" style="display:grid;gap:10px;align-content:start">
+    <h2 style="color:var(--nuit)">⬇ Notes des devoirs</h2>
+    <p class="aide" style="margin:0">Moyenne de chaque élève pour chaque devoir.</p>
+    <a class="btn bleu" href="{{ url_for('excel_notes', **({'classe': classe_choisie} if classe_choisie else {})) }}">Télécharger les notes</a>
+  </div>
+  {% if role == 'admin' %}
+  <form class="carte" method="post" action="{{ url_for('excel_importer') }}" enctype="multipart/form-data" style="display:grid;gap:10px">
+    <h2 style="color:var(--nuit)">⬆ Importer un fichier</h2>
+    <ol class="aide" style="margin:0;padding-left:18px;display:grid;gap:4px">
+      <li>Téléchargez les <b>fiches de présence</b> (à gauche) : c'est le modèle.</li>
+      <li>Dans Excel, écrivez les <b>noms des élèves</b> de chaque cours (une ligne par élève) et, si vous voulez, <b>P / R / A</b> sous les dates.</li>
+      <li>Enregistrez, puis choisissez le fichier ici.</li>
+    </ol>
+    <input type="file" name="fichier" accept=".xlsx" required aria-label="Fichier Excel">
+    <button class="btn">Importer</button>
+    <p class="aide" style="margin:0">Les nouveaux élèves reçoivent automatiquement leur identifiant et leur code. Un élève déjà inscrit n'est pas créé deux fois.</p>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

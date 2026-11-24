@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titre %}Fiche de présence · Digital Kids{% endblock %}
+{% block ruban %}{% set actif = 'presence' %}{% include '_nav.html' %}{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
+{% block contenu %}
+{% if not cr %}
+<h1 class="titre-page">Fiche de présence</h1>
+<p class="sous">Choisissez le cours.</p>
+<div class="choix-cours">
+  {% for c in crs %}<a class="cours {{ 'aujourd' if c.jour == jour }}" href="{{ url_for('presence', creneau=c.id) }}">
+    {% if c.jour == jour %}<span class="chip orange">aujourd'hui</span>{% endif %}
+    <b>{{ c.horaire }}</b><span>{{ c.classe }} · {{ c.nom }}</span></a>
+  {% else %}<div class="carte"><p style="margin:0">Aucun cours. {% if role == 'admin' %}Ajoutez les jours et heures dans <a href="{{ url_for('profs') }}">Animateurs & cours</a>.{% else %}Demandez à l'administrateur d'ajouter vos jours de cours.{% endif %}</p></div>{% endfor %}
+</div>
+{% else %}
+<div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+  <div><a class="aide" href="{{ url_for('presence') }}">← tous les cours</a>
+    <h1 class="titre-page">Présence · {{ cr.horaire }}</h1><p class="sous">{{ cr.classe }} · {{ cr.nom }} · {{ eleves|length }} élève(s)</p></div>
+  <form method="get" style="display:flex;gap:8px;align-items:center"><input type="hidden" name="creneau" value="{{ cr.id }}">
+    <label for="date"><b>Date :</b></label>
+    <select id="date" name="date" onchange="this.form.submit()">{% for d in dates %}<option value="{{ d }}" {{ 'selected' if d == date }}>{{ JOURS[cr.jour] }} {{ d|date_fr }}</option>{% endfor %}</select>
+  </form>
+</div>
+{% if seance %}<div class="flash">✓ Fiche déjà enregistrée par {{ seance.saisi_par }} le {{ seance.saisi_le[:10]|date_fr }} à {{ seance.saisi_le[11:16] }}. Vous pouvez la corriger et enregistrer à nouveau.</div>{% endif %}
+{% if not eleves %}<div class="carte" style="margin-top:14px"><p style="margin:0">Aucun élève dans ce cours. {% if role == 'admin' %}<a href="{{ url_for('eleves') }}">Ajoutez les élèves</a> ou importez-les depuis <a href="{{ url_for('excel') }}">Excel</a>.{% else %}L'administrateur doit ajouter les élèves de ce cours.{% endif %}</p></div>
+{% else %}
+<form method="post" class="carte fiche-presence" style="margin-top:14px">
+  <input type="hidden" name="creneau" value="{{ cr.id }}"><input type="hidden" name="date" value="{{ date }}">
+  <div class="no-print" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <button type="button" class="btn petit bleu" onclick="document.querySelectorAll('.fiche-presence input[value=P]').forEach(r=>r.checked=true);compter()">Tout le monde présent</button>
+    <span class="aide" id="compte" style="align-self:center"></span>
+  </div>
+  {% for e in eleves %}{% set st = statuts.get(e.id, '') %}
+  <div class="ligne-presence">
+    <span class="n">{{ loop.index }}</span>
+    <a href="{{ url_for('eleve_detail', eid=e.id) }}" class="nom"><b>{{ e.prenom }}</b> <span class="aide">niv. {{ e.niveau }}</span></a>
+    <span class="choix3">
+      <label class="p"><input type="radio" name="e{{ e.id }}" value="P" {{ 'checked' if st == 'P' }} onchange="compter()"><span>Présent</span></label>
+      <label class="r"><input type="radio" name="e{{ e.id }}" value="R" {{ 'checked' if st == 'R' }} onchange="compter()"><span>Retard</span></label>
+      <label class="a"><input type="radio" name="e{{ e.id }}" value="A" {{ 'checked' if st == 'A' }} onchange="compter()"><span>Absent</span></label>
+    </span>
+  </div>
+  {% endfor %}
+  <button class="btn" style="margin-top:14px;width:100%">💾 Enregistrer la présence du {{ date|date_fr }}</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts %}<script>
+function compter(){const f=document.querySelector('.fiche-presence');if(!f)return;const n=f.querySelectorAll('.ligne-presence').length;
+const v=t=>f.querySelectorAll('input[value='+t+']:checked').length;const r=n-v('P')-v('R')-v('A');
+document.getElementById('compte').textContent=v('P')+' présent(s) · '+v('R')+' retard · '+v('A')+' absent(s)'+(r?' · '+r+' pas encore coché(s)':'');}
+compter();
+</script>{% endblock %}

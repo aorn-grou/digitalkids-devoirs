@@ -5,7 +5,7 @@
 <form class="carte form-connexion" method="post" autocomplete="off" style="max-width:640px;margin:0 auto">
   <span class="pastille" style="justify-self:start">NOUVEL ÉLÈVE</span>
   <h1 style="font-size:32px;color:var(--nuit)">Je crée mon compte</h1>
-  <p class="sous" style="margin:0">{{ 4 if classes else 3 }} petites étapes, et tu peux faire ton devoir.</p>
+  <p class="sous" style="margin:0">{{ 4 if (classes or creneaux) else 3 }} petites étapes, et tu peux faire ton devoir.</p>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
 
   <div class="etape-ins"><span class="num">1</span><label for="prenom">Mon prénom</label></div>
@@ -18,14 +18,20 @@
     <input class="code" type="password" id="code2" name="code2" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="encore" required aria-label="Le même code encore une fois">
   </div>
 
-  {% if classes %}
+  {% if creneaux %}
+  <div class="etape-ins"><span class="num">3</span><label>Je choisis mon jour et mon heure de cours</label></div>
+  <div class="niveaux">
+    {% for c in creneaux %}<label class="niv"><input type="radio" name="creneau" value="{{ c.id }}" {{ 'checked' if v.creneau == c.id|string }} required>
+      <span><b>{{ c.horaire }}</b><small>{{ c.classe }} · avec {{ c.nom }}</small></span></label>{% endfor %}
+  </div>
+  {% elif classes %}
   <div class="etape-ins"><span class="num">3</span><label>Je choisis ma classe (mon animateur)</label></div>
   <div class="niveaux">
     {% for c in classes %}<label class="niv"><input type="radio" name="classe" value="{{ c.id }}" {{ 'checked' if v.classe == c.id|string }} required>
       <span><b>{{ c.classe }}</b><small>avec {{ c.nom }}</small></span></label>{% endfor %}
   </div>
   {% endif %}
-  <div class="etape-ins"><span class="num">{{ 4 if classes else 3 }}</span><label>Je choisis mon niveau</label></div>
+  <div class="etape-ins"><span class="num">{{ 4 if (classes or creneaux) else 3 }}</span><label>Je choisis mon niveau</label></div>
   <div class="niveaux">
     <label class="niv"><input type="radio" name="niveau" value="1" {{ 'checked' if v.niveau == '1' }} required>
       <span><b>Niveau 1</b><small>Clavier, souris, dossiers et Writer</small></span></label>

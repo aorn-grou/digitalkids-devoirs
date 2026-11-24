@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block titre %}Animateurs & classes · Digital Kids{% endblock %}
+{% block titre %}Animateurs & cours · Digital Kids{% endblock %}
 {% block ruban %}{% set actif = 'profs' %}{% include '_nav.html' %}{% endblock %}
 {% block qui %}{% include '_qui.html' %}{% endblock %}
 {% block contenu %}
-<h1 class="titre-page">Animateurs & classes</h1>
-<p class="sous">Chaque animateur a sa classe, avec son propre niveau 1, son propre niveau 2 et ses propres devoirs. L'animateur voit seulement sa classe ; l'administrateur voit tout.</p>
-<div class="grille-admin" style="margin-top:16px;align-items:start">
-  <form class="carte" method="post" style="display:grid;gap:10px" autocomplete="off">
+<h1 class="titre-page">Animateurs & cours</h1>
+<p class="sous">Chaque animateur a sa classe, avec ses jours et heures de cours, son propre niveau 1, son propre niveau 2 et ses propres devoirs. L'animateur voit seulement sa classe ; l'administrateur voit tout.</p>
+<div class="grille-admin" style="margin-top:16px;align-items:start;grid-template-columns:1fr">
+  <form class="carte" method="post" style="display:grid;gap:10px;max-width:520px" autocomplete="off">
     <h2 style="color:var(--nuit)">Ajouter un animateur</h2>
     <input type="hidden" name="action" value="ajouter">
     <label for="nom">Nom de l'animateur</label><input id="nom" name="nom" required placeholder="ex. Mr Hery">
@@ -16,13 +16,19 @@
     <p class="aide" style="margin:0">Sa classe reçoit tout de suite les devoirs niveau 1 et niveau 2. Donnez-lui son identifiant et son mot de passe ; il pourra le changer.</p>
     <button class="btn">Créer l'animateur</button>
   </form>
-  <div class="carte" style="grid-column:span 2;min-width:0">
+  <div class="carte" style="grid-column:1/-1;min-width:0">
     <h2 style="color:var(--nuit)">{{ profs|length }} classe(s)</h2>
     {% if not profs %}<p>Aucun animateur pour l'instant. Créez les 2 animateurs à gauche.</p>{% endif %}
     <div class="defile" style="margin-top:10px"><table class="tableau-notes">
-      <tr><th>Classe</th><th>Animateur</th><th>Identifiant</th><th>Élèves</th><th>Devoirs</th><th></th></tr>
+      <tr><th>Classe</th><th>Animateur</th><th>Identifiant</th><th>Élèves</th><th>Jours et heures de cours</th><th></th></tr>
       {% for x in profs %}<tr>
-        <td><a href="{{ url_for('tableau', classe=x.p.id) }}"><b>{{ x.p.classe }}</b></a></td><td>{{ x.p.nom }}</td><td><code>{{ x.p.identifiant }}</code></td><td>{{ x.eleves }}</td><td>{{ x.devoirs }}</td>
+        <td><a href="{{ url_for('tableau', classe=x.p.id) }}"><b>{{ x.p.classe }}</b></a></td><td>{{ x.p.nom }}</td><td><code>{{ x.p.identifiant }}</code></td><td>{{ x.eleves }}</td>
+        <td>{% for c in x.creneaux %}<div class="cours-ligne"><b>{{ c.horaire }}</b> <span class="aide">{{ c.eleves }} élève(s)</span>
+            <form method="post" style="display:inline" onsubmit="return confirm('Supprimer ce cours ?')"><input type="hidden" name="action" value="creneau_supprimer"><input type="hidden" name="creneau" value="{{ c.id }}"><button class="lien-x" title="Supprimer ce cours">✕</button></form></div>{% else %}<span class="aide">aucun</span>{% endfor %}
+          <form method="post" class="ajout-cours"><input type="hidden" name="action" value="creneau"><input type="hidden" name="prof" value="{{ x.p.id }}">
+            <select name="jour" aria-label="Jour">{% for j in jours %}<option value="{{ loop.index0 }}" {{ 'selected' if loop.index0 == 5 }}>{{ j }}</option>{% endfor %}</select>
+            <input type="time" name="debut" value="14:00" step="900" aria-label="Début"> → <input type="time" name="fin" value="16:00" step="900" aria-label="Fin">
+            <button class="btn petit">+ Ajouter</button></form></td>
         <td style="white-space:nowrap">
           <form method="post" style="display:inline-flex;gap:6px;align-items:center"><input type="hidden" name="action" value="mdp"><input type="hidden" name="prof" value="{{ x.p.id }}">
             <input name="mot_de_passe" placeholder="nouveau mot de passe" minlength="6" required style="width:170px" aria-label="Nouveau mot de passe"><button class="btn petit bleu">Changer</button></form>

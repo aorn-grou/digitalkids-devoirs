@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord · Digital Kids{% endblock %}
+{% block ruban %}{% set actif = 'tableau_de_bord' %}{% include '_nav.html' %}{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
+{% block contenu %}
+<div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+  <div><h1 class="titre-page">Tableau de bord</h1><p class="sous">Aujourd'hui {{ aujourdhui|date_fr }} · chiffres du mois de {{ mois|mois_libelle }}.</p></div>
+  {% include '_filtre.html' %}
+</div>
+{% if role == 'admin' and not nb_cours %}<div class="flash">Pour commencer : menu <a href="{{ url_for('profs') }}">Animateurs & cours</a> → créez les 2 animateurs, puis leurs jours et heures de cours.</div>{% endif %}
+
+<div class="kpis">
+  <div class="kpi"><span class="v">{{ nb_eleves }}</span><span class="l">élèves</span></div>
+  <div class="kpi"><span class="v">{{ (taux_mois ~ ' %') if taux_mois is not none else '—' }}</span><span class="l">présence ce mois</span></div>
+  <div class="kpi"><span class="v">{{ en_retard|length }}</span><span class="l">fiche(s) de présence pas faite(s)</span></div>
+  <div class="kpi"><span class="v">{{ finis }}</span><span class="l">devoir(s) terminé(s) ce mois</span></div>
+  <div class="kpi"><span class="v">{{ (moyenne_mois ~ '/20') if moyenne_mois is not none else '—' }}</span><span class="l">moyenne des exercices</span></div>
+</div>
+
+<div class="grille-admin" style="margin-top:16px;align-items:start">
+  <div class="carte">
+    <h2 style="color:var(--nuit)">Cours d'aujourd'hui</h2>
+    {% for x in du_jour %}
+      <div class="evt ligne"><span><b>{{ x.c.libelle }}</b> · {{ x.c.nom }} · {{ x.eleves }} élève(s)</span>
+        {% if x.faite %}<span class="chip vert">présence faite</span>{% else %}<a class="btn petit" href="{{ url_for('presence', creneau=x.c.id) }}">Faire la présence</a>{% endif %}</div>
+    {% else %}<p class="aide">Pas de cours aujourd'hui.</p>{% endfor %}
+    {% if en_retard %}<h3 style="margin:14px 0 4px;color:var(--rouge,#c62828)">Fiches oubliées</h3>
+      {% for c, d in en_retard[:6] %}<div class="evt ligne"><span>{{ c.libelle }} · {{ d|date_fr }}</span><a class="btn petit gris" href="{{ url_for('presence', creneau=c.id, date=d) }}">Remplir</a></div>{% endfor %}
+      {% if en_retard|length > 6 %}<p class="aide">… et {{ en_retard|length - 6 }} autre(s) : voir le <a href="{{ url_for('rapport_presence') }}">rapport de présence</a>.</p>{% endif %}{% endif %}
+  </div>
+  <div class="carte">
+    <h2 style="color:var(--nuit)">Classes</h2>
+    {% for k in stats_classes %}
+      <div class="classe-bloc">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>{{ k.p.classe }} · {{ k.p.nom }}</b>
+          {% if k.taux is not none %}<span class="chip {{ 'vert' if k.taux >= 80 else ('orange' if k.taux >= 60 else 'rouge') }}">{{ k.taux }} % présents</span>{% endif %}</div>
+        <div class="aide">{{ k.eleves }} élève(s) · {% for c in k.cours %}{{ c.horaire }}{{ ' · ' if not loop.last }}{% else %}aucun cours{% endfor %}</div>
+      </div>
+    {% else %}<p class="aide">Aucune classe.</p>{% endfor %}
+    {% if sans_cours %}<p class="aide">⚠ {{ sans_cours }} élève(s) sans jour de cours : <a href="{{ url_for('eleves') }}">les placer</a>.</p>{% endif %}
+    <a class="btn petit bleu" href="{{ url_for('rapport_presence', **({'classe': classe_choisie} if classe_choisie else {})) }}" style="margin-top:8px">Rapport de présence du mois</a>
+  </div>
+  <div class="carte">
+    <h2 style="color:var(--nuit)">Souvent absents ce mois</h2>
+    {% for l, c in absents %}<div class="evt ligne"><span><a href="{{ url_for('eleve_detail', eid=l.e.id) }}"><b>{{ l.e.prenom }}</b></a> · {{ c.libelle }}</span><span class="chip rouge">{{ l.absents }} absence(s)</span></div>
+    {% else %}<p class="aide">Personne n'a 2 absences ou plus ce mois. 👍</p>{% endfor %}
+    <h3 style="margin:14px 0 4px;color:var(--nuit)">Dernières activités en ligne</h3>
+    {% for l in recents %}<div class="evt"><span class="h">{{ l.date[8:10] }}/{{ l.date[5:7] }} · {{ l.date[11:16] }}</span><span><b>{{ l.prenom or '?' }}</b> · {{ {'connexion':'connexion','inscription':'nouveau compte','debut':'a commencé un devoir','exercice':l.detail,'fini':'a terminé · ' ~ l.detail}.get(l.type, l.type) }}</span></div>
+    {% else %}<p class="aide">Aucune activité.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -4,18 +4,42 @@
 {% block qui %}{% include '_qui.html' %}{% endblock %}
 {% block contenu %}
 <h1 class="titre-page">{{ e.prenom }}</h1>
-<p class="sous">Identifiant <b>{{ e.identifiant }}</b> · code <b>{{ e.code }}</b> · niveau <b>{{ e.niveau }}</b> · classe <b>{{ (prof.classe ~ " · " ~ prof.nom) if prof else "aucune" }}</b></p>
-<div class="carte" style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+<p class="sous">Identifiant <b>{{ e.identifiant }}</b> · code <b>{{ e.code }}</b> · niveau <b>{{ e.niveau }}</b> · classe <b>{{ (prof.classe ~ " · " ~ prof.nom) if prof else "aucune" }}</b> · cours <b>{{ cr.horaire if cr else "pas encore placé" }}</b></p>
+<div class="kpis">
+  <div class="kpi"><span class="v">{{ (taux_total ~ ' %') if taux_total is not none else '—' }}</span><span class="l">présence (toujours)</span></div>
+  <div class="kpi"><span class="v">{{ tot.P + tot.R }}</span><span class="l">fois présent{% if tot.R %} (dont {{ tot.R }} retard){% endif %}</span></div>
+  <div class="kpi"><span class="v">{{ tot.A }}</span><span class="l">absence(s)</span></div>
+  {% set moys = resultats|selectattr('moyenne')|map(attribute='moyenne')|list %}
+  <div class="kpi"><span class="v">{{ ((moys|sum / moys|length)|round(1) ~ '/20') if moys else '—' }}</span><span class="l">moyenne des devoirs</span></div>
+</div>
+<div class="carte no-print" style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+  {% if role == 'admin' %}
+  <form method="post" style="display:flex;gap:8px;align-items:center"><input type="hidden" name="action" value="nom">
+    <input name="prenom" value="{{ e.prenom }}" aria-label="Nom" style="width:180px"><button class="btn petit gris">Corriger le nom</button></form>
+  <form method="post" style="display:flex;gap:8px;align-items:center"><input type="hidden" name="action" value="creneau">
+    <select name="creneau" aria-label="Cours">{% for c in noms_cr.values() %}<option value="{{ c.id }}" {{ 'selected' if c.id == e.creneau_id }}>{{ c.libelle }}</option>{% endfor %}<option value="" {{ 'selected' if not e.creneau_id }}>Pas de cours</option></select>
+    <button class="btn petit bleu">Changer de cours</button></form>
+  {% endif %}
   <form method="post" style="display:flex;gap:8px;align-items:center"><input type="hidden" name="action" value="niveau">
     <select name="niveau" aria-label="Niveau">{% for n in [1,2] %}<option value="{{ n }}" {{ 'selected' if n == e.niveau }}>Niveau {{ n }}</option>{% endfor %}</select>
     <button class="btn petit bleu">Changer le niveau</button></form>
-  {% if role == 'admin' %}<form method="post" style="display:flex;gap:8px;align-items:center"><input type="hidden" name="action" value="classe">
-    <select name="classe" aria-label="Classe">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if c.id == e.classe_id }}>{{ c.classe }} · {{ c.nom }}</option>{% endfor %}<option value="" {{ 'selected' if not e.classe_id }}>Sans classe</option></select>
-    <button class="btn petit bleu">Changer la classe</button></form>{% endif %}
   <form method="post"><input type="hidden" name="action" value="code"><button class="btn petit gris">Nouveau code</button></form>
-  <form method="post" onsubmit="return this.querySelector('input[name=ok]').checked"><input type="hidden" name="action" value="supprimer">
-    <label class="aide"><input type="checkbox" name="ok"> je confirme</label> <button class="btn petit rouge">Supprimer l'élève</button></form>
+  {% if role == 'admin' %}<form method="post" onsubmit="return this.querySelector('input[name=ok]').checked"><input type="hidden" name="action" value="supprimer">
+    <label class="aide"><input type="checkbox" name="ok"> je confirme</label> <button class="btn petit rouge">Supprimer l'élève</button></form>{% endif %}
 </div>
+
+<h2 style="margin:22px 0 10px;color:var(--bleu)">Présences</h2>
+{% for m in mois_pres %}
+<div class="carte" style="margin-top:10px">
+  <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+    <b style="text-transform:capitalize">{{ m.mois|mois_libelle }}</b>
+    <span>Présent <b>{{ m.P + m.R }}</b> fois · absent <b>{{ m.A }}</b> fois {% if m.taux is not none %}<span class="chip {{ 'vert' if m.taux >= 80 else ('orange' if m.taux >= 60 else 'rouge') }}">{{ m.taux }} %</span>{% endif %}</span>
+  </div>
+  <div class="pastilles-dates">{% for x in m.dates|reverse %}<span class="st st-{{ x.statut }}" title="{{ noms_cr[x.creneau_id].horaire if x.creneau_id in noms_cr else '' }}">{{ x.date[8:10] }}/{{ x.date[5:7] }} {{ x.statut }}</span>{% endfor %}</div>
+</div>
+{% else %}<div class="carte"><p class="aide" style="margin:0">Aucune fiche de présence pour cet élève pour l'instant.</p></div>{% endfor %}
+
+<h2 style="margin:22px 0 10px;color:var(--bleu)">Devoirs en ligne</h2>
 {% for r in resultats %}
 <div class="carte" style="margin-top:16px">
   <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
@@ -26,7 +50,9 @@
     <tr><th>Exercice</th><th>Note</th><th>Date</th></tr>
     {% for l in r.lignes %}<tr><td>{{ loop.index }}. {{ l.titre }}</td><td>{% if l.note is not none %}<span class="chip {{ 'vert' if l.note >= 14 else ('orange' if l.note >= 10 else 'rouge') }}">{{ l.note }}/20</span>{% else %}<span class="chip gris">pas fait</span>{% endif %}</td><td>{{ l.date.replace('T', ' ') }}</td></tr>{% endfor %}
   </table></div>
-  <form method="post" style="margin-top:10px"><input type="hidden" name="action" value="reset"><input type="hidden" name="devoir" value="{{ r.id }}"><button class="btn petit gris">Remettre ce devoir à zéro (l'élève peut le refaire)</button></form>
+  <form method="post" class="no-print" style="margin-top:10px"><input type="hidden" name="action" value="reset"><input type="hidden" name="devoir" value="{{ r.id }}"><button class="btn petit gris">Remettre ce devoir à zéro (l'élève peut le refaire)</button></form>
 </div>
-{% endfor %}
+{% else %}<div class="carte"><p class="aide" style="margin:0">Aucun devoir.</p></div>{% endfor %}
+{% if connexions %}<h2 style="margin:22px 0 10px;color:var(--bleu)">Dernières connexions</h2>
+<div class="carte" style="padding:6px 14px">{% for x in connexions %}<div class="evt"><span class="h">{{ x.date[:10]|date_fr }} · {{ x.date[11:16] }}</span><span>{{ 'a créé son compte' if x.type == 'inscription' else "s'est connecté(e)" }}</span></div>{% endfor %}</div>{% endif %}
 {% endblock %}

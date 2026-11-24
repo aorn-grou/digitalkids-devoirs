@@ -235,3 +235,41 @@ table.gridtab th{background:var(--ciel2);border-color:var(--bord)}
 .filtre-classe select{min-width:200px}
 @media (max-width:640px){.btn-installer{padding:7px 10px;font-size:13px}}
 .qui{flex-wrap:wrap;justify-content:flex-end}
+
+/* ---- présences, tableau de bord, recherche ---- */
+.ruban .nav-admin{display:flex;flex-wrap:wrap;gap:4px 16px}
+.cherche input{border-radius:999px;padding:7px 14px;border:0;min-width:190px;font:inherit;font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:14px}
+.kpi{background:#fff;border:2px solid #d6e4ff;border-radius:18px;padding:14px 16px;display:grid}
+.kpi .v{font:800 30px var(--titre);color:var(--bleu);line-height:1.1}
+.kpi .l{font-size:14px;color:#55618a;font-weight:700}
+.classe-bloc{padding:10px 0;border-bottom:1px solid #e3ebff}
+.evt.ligne{justify-content:space-between;align-items:center}
+.choix-cours{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:14px}
+.choix-cours .cours{background:#fff;border:2px solid #d6e4ff;border-radius:18px;padding:16px;text-decoration:none;color:var(--nuit);display:grid;gap:4px}
+.choix-cours .cours b{font:800 22px var(--titre);color:var(--bleu)}
+.choix-cours .cours.aujourd{border-color:var(--orange);box-shadow:0 4px 0 rgba(255,122,0,.25)}
+.choix-cours .chip{justify-self:start}
+.ligne-presence{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e3ebff;flex-wrap:wrap}
+.ligne-presence .n{width:26px;color:#7a86a8;font-weight:800}
+.ligne-presence .nom{flex:1;min-width:150px;color:var(--nuit);text-decoration:none}
+.choix3{display:flex;gap:6px}
+.choix3 label{cursor:pointer}
+.choix3 input{position:absolute;opacity:0;pointer-events:none}
+.choix3 span{display:inline-block;padding:8px 14px;border-radius:999px;border:2px solid #cfd9ef;font-weight:800;color:#55618a;min-width:78px;text-align:center}
+.choix3 .p input:checked+span{background:#1FA34A;border-color:#1FA34A;color:#fff}
+.choix3 .r input:checked+span{background:#FF7A00;border-color:#FF7A00;color:#fff}
+.choix3 .a input:checked+span{background:#E5392B;border-color:#E5392B;color:#fff}
+.choix3 input:focus-visible+span{outline:3px solid var(--bleu);outline-offset:2px}
+.grille-presence td.st{text-align:center;font-weight:800}
+.st-P{background:#e3f7e9;color:#14753a}.st-R{background:#fff0e0;color:#b85600}.st-A{background:#fde4e1;color:#b3261e}.st-\?{background:#f1f3f8;color:#7a86a8}
+tr.parti td{opacity:.6}
+.pastilles-dates{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pastilles-dates .st{padding:4px 10px;border-radius:999px;font-weight:800;font-size:13px}
+.cours-ligne{white-space:nowrap}
+.lien-x{background:none;border:0;color:#b3261e;cursor:pointer;font-weight:800}
+.ajout-cours{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.ajout-cours select,.ajout-cours input{padding:4px 6px;font-size:14px}
+.print-only{display:none}
+@media print{.print-only{display:block}.bandeau,.ruban,.pied,.no-print{display:none!important}.carte{border:1px solid #999;box-shadow:none}.st-P,.st-R,.st-A{background:none!important;color:#000!important}}
+@media (max-width:640px){.cherche input{min-width:0;width:170px;font-size:13px}.choix3 span{min-width:0;padding:7px 10px}}

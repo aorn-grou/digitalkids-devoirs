@@ -75,7 +75,7 @@ def main():
     etape("Installation de Flask")
     import shutil
     py = shutil.which("python3.10") or sys.executable
-    subprocess.run([py, "-m", "pip", "install", "--user", "--quiet", "Flask>=2.2"], check=False)
+    subprocess.run([py, "-m", "pip", "install", "--user", "--quiet", "Flask>=2.2", "openpyxl"], check=False)
 
     etape("Connexion à votre compte PythonAnywhere")
     s, base, sites = api()

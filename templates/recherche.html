@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titre %}Recherche · Digital Kids{% endblock %}
+{% block ruban %}{% set actif = '' %}{% include '_nav.html' %}{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
+{% block contenu %}
+<h1 class="titre-page">Chercher un élève</h1>
+<form method="get" class="carte" style="display:flex;gap:10px;margin-top:12px"><input type="search" name="q" value="{{ q }}" placeholder="Prénom, nom ou identifiant" style="flex:1" autofocus aria-label="Nom de l'élève"><button class="btn">Chercher</button></form>
+{% if q %}
+<h2 style="margin:20px 0 10px;color:var(--bleu)">{{ res|length }} résultat(s) pour « {{ q }} »</h2>
+{% if res %}<div class="defile"><table class="tableau-notes">
+  <tr><th>Élève</th><th>Classe</th><th>Cours</th><th>Niveau</th><th>Présences</th><th>Moyenne des notes</th><th></th></tr>
+  {% for r in res %}<tr><td><b>{{ r.e.prenom }}</b><br><span class="aide">{{ r.e.identifiant }}</span></td><td>{{ r.classe.classe if r.classe else '—' }}</td><td>{{ r.cr.horaire if r.cr else '—' }}</td><td>{{ r.e.niveau }}</td>
+    <td>{% if r.taux is not none %}<span class="chip {{ 'vert' if r.taux >= 80 else ('orange' if r.taux >= 60 else 'rouge') }}">{{ r.taux }} %</span> <span class="aide">{{ r.presents }} P · {{ r.absents }} A</span>{% else %}—{% endif %}</td>
+    <td>{{ (r.moyenne ~ '/20') if r.moyenne is not none else '—' }}</td><td><a class="btn petit bleu" href="{{ url_for('eleve_detail', eid=r.e.id) }}">Voir la fiche</a></td></tr>{% endfor %}
+</table></div>{% else %}<p>Aucun élève trouvé. Vérifiez l'orthographe.</p>{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titre %}Rapport de présence · Digital Kids{% endblock %}
+{% block ruban %}{% set actif = 'rapport_presence' %}{% include '_nav.html' %}{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
+{% block contenu %}
+<div class="no-print" style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+  <div><h1 class="titre-page">Rapport de présence · {{ mois|mois_libelle }}</h1>
+  <p class="sous">Calculé tout seul à partir des fiches. P = présent · R = retard (compté présent) · A = absent · ? = fiche faite mais élève pas coché · vide = fiche pas faite.</p></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    {% include '_filtre.html' %}
+    <form method="get" style="display:flex;gap:8px;align-items:center">{% if classe_choisie %}<input type="hidden" name="classe" value="{{ classe_choisie }}">{% endif %}
+      <label for="mois"><b>Mois :</b></label><input type="month" id="mois" name="mois" value="{{ mois }}" onchange="this.form.submit()"></form>
+    <a class="btn petit bleu" href="{{ url_for('excel_presences', mois=mois, **({'classe': classe_choisie} if classe_choisie else {})) }}">⬇ Excel</a>
+    <button class="btn petit gris" onclick="window.print()">Imprimer</button>
+  </div>
+</div>
+<h1 class="print-only">Rapport de présence · {{ mois|mois_libelle }}</h1>
+{% for x in pres %}
+<div class="carte" style="margin-top:16px;break-inside:avoid">
+  <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+    <h2 style="color:var(--nuit)">{{ x.c.classe }} · {{ x.c.horaire }} <span class="aide">· {{ x.c.nom }}</span></h2>
+    <span class="aide">{{ x.faites|length }} cours fait(s) sur {{ x.dates|length }} ce mois</span>
+  </div>
+  {% if not x.lignes %}<p class="aide">Aucun élève dans ce cours.</p>{% else %}
+  <div class="defile" style="margin-top:8px"><table class="tableau-notes grille-presence">
+    <tr><th>Élève</th>{% for d in x.dates %}<th>{{ d[8:10] }}/{{ d[5:7] }}{% if d not in x.faites %}<br><small>pas faite</small>{% endif %}</th>{% endfor %}<th>Présent</th><th>Absent</th><th>Taux</th></tr>
+    {% for l in x.lignes %}<tr {% if l.parti %}class="parti"{% endif %}>
+      <td><a href="{{ url_for('eleve_detail', eid=l.e.id) }}"><b>{{ l.e.prenom }}</b></a>{% if l.parti %} <span class="aide">(a changé de cours)</span>{% endif %}</td>
+      {% for v in l.cases %}<td class="st st-{{ v or 'vide' }}">{{ v }}</td>{% endfor %}
+      <td><b>{{ l.presents }}</b>{% if l.retards %} <span class="aide">(dont {{ l.retards }} R)</span>{% endif %}</td><td><b>{{ l.absents }}</b></td>
+      <td>{% if l.taux is not none %}<span class="chip {{ 'vert' if l.taux >= 80 else ('orange' if l.taux >= 60 else 'rouge') }}">{{ l.taux }} %</span>{% else %}—{% endif %}</td>
+    </tr>{% endfor %}
+  </table></div>{% endif %}
+</div>
+{% else %}<div class="carte" style="margin-top:16px"><p style="margin:0">Aucun cours pour l'instant.</p></div>{% endfor %}
+{% endblock %}

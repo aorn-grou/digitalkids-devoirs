@@ -154,8 +154,7 @@ ok(pb.get(f"/animateur/eleve/{mid}").status_code == 404, "Mme Lova ne peut pas o
 ok(pb.get(f"/animateur/apercu/c{ia}-n1-devoir-1").status_code == 404, "ni l'aperçu des devoirs de l'autre classe")
 csv_b = pb.get("/animateur/notes.csv").get_data(as_text=True)
 ok("Mamy" not in csv_b, "export CSV limité à la classe")
-pb.post("/animateur/eleves", data={"prenoms": "Nirina", "niveau": "2", "classe": str(ia)})
-ok(con.execute("SELECT classe_id FROM eleves WHERE prenom='Nirina'").fetchone()[0] == ib, "un élève ajouté par Mme Lova va dans SA classe")
+ok(pb.post("/animateur/eleves", data={"prenoms": "Nirina", "niveau": "2"}).status_code == 403, "seul l'administrateur ajoute les élèves")
 ta_all = c.get("/animateur/tableau").get_data(as_text=True)
 ok(all(n in ta_all for n in ["Mamy", "Soa", "Rivo", "Classe A", "Classe B", "Sans classe"]), "l'administrateur voit tout (toutes les classes)")
 t_f = c.get(f"/animateur/tableau?classe={ia}").get_data(as_text=True)
@@ -172,4 +171,74 @@ ok(c.post("/animateur/profs", data={"action": "supprimer", "prof": str(ia)}, fol
 pa.post("/animateur/mot-de-passe", data={"mot_de_passe": "nouveau1", "confirmation": "nouveau1"})
 ok(A.app.test_client().post("/animateur", data={"identifiant": "mrhery", "mot_de_passe": "nouveau1"}).status_code == 302, "l'animateur change son mot de passe")
 ok(A.app.test_client().post("/animateur", data={"identifiant": "admin", "mot_de_passe": "secret123"}).status_code == 302, "l'admin se connecte avec « admin »")
+
+# ---- cours (créneaux), fiches de présence, rapport, recherche, Excel, tableau de bord
+from datetime import date as _d
+def cours(pid, jour, debut, fin):
+    c.post("/animateur/profs", data={"action": "creneau", "prof": str(pid), "jour": str(jour), "debut": debut, "fin": fin})
+    return con.execute("SELECT id FROM creneaux WHERE classe_id=? AND jour=? AND debut=?", (pid, jour, debut)).fetchone()[0]
+mer = cours(ia, 2, "14:00", "16:00"); samA = cours(ia, 5, "14:00", "16:00")
+s8 = cours(ib, 5, "08:00", "10:00"); s10 = cours(ib, 5, "10:00", "12:00"); s14 = cours(ib, 5, "14:00", "16:00")
+ok(con.execute("SELECT COUNT(*) FROM creneaux").fetchone()[0] == 5, "5 cours créés (Mr Hery : mer + sam 14h ; Mme Lova : sam 8h, 10h, 14h)")
+ok("Mercredi 14h-16h" in c.get("/animateur/profs").get_data(as_text=True), "la page Animateurs affiche les horaires")
+r = c.post("/animateur/eleves", data={"prenoms": "Andry Rakoto\nBe Rasoa\nMamy", "niveau": "1", "creneau": str(mer)}, follow_redirects=True).get_data(as_text=True)
+ok("2 élève(s) ajouté(s), 1 déjà inscrit" in r, "l'admin met les noms dans le cours du mercredi (Mamy déjà inscrite n'est pas recréée)")
+ok(con.execute("SELECT COUNT(*) FROM eleves WHERE creneau_id=?", (mer,)).fetchone()[0] == 3, "3 élèves dans le cours du mercredi")
+ok(pb.get(f"/animateur/presence?creneau={mer}").status_code == 404, "Mme Lova ne peut pas faire la présence de la classe A")
+ok("Mercredi 14h-16h" in pa.get("/animateur/presence").get_data(as_text=True), "Mr Hery voit ses cours")
+mer_dates = A.dernieres_dates(2)
+ids = {e["prenom"]: e["id"] for e in con.execute("SELECT * FROM eleves WHERE creneau_id=?", (mer,))}
+for k, d in enumerate(mer_dates[:4]):
+    statuts = {"Andry Rakoto": "P", "Be Rasoa": "A" if k < 2 else "P", "Mamy": "R"}
+    pa.post("/animateur/presence", data={"creneau": str(mer), "date": d, **{f"e{ids[n]}": v for n, v in statuts.items()}})
+ok(con.execute("SELECT COUNT(*) FROM seances WHERE creneau_id=?", (mer,)).fetchone()[0] == 4, "4 fiches du mercredi enregistrées")
+pg = pa.get(f"/animateur/presence?creneau={mer}&date={mer_dates[0]}").get_data(as_text=True)
+ok("déjà enregistrée par Mr Hery" in pg, "la fiche montre qui l'a enregistrée")
+bad = (A.aujourdhui() - __import__("datetime").timedelta(days=(A.aujourdhui().weekday() - 1) % 7 or 7)).isoformat()
+ok(pa.get(f"/animateur/presence?creneau={mer}&date={bad}").status_code == 302, "une date qui n'est pas un mercredi est refusée")
+mois = mer_dates[0][:7]
+rap = c.get(f"/animateur/presences?mois={mois}").get_data(as_text=True)
+ok("Rapport de présence" in rap and "Andry Rakoto" in rap and "Mercredi 14h-16h" in rap, "rapport de présence du mois")
+pres = A.app.test_request_context(f"/?mois={mois}")
+with A.app.test_request_context("/"):
+    from flask import session as _s
+    _s["role"] = "admin"
+    A.db()
+    calc = A.calcul_presences([A.creneau(mer)], mois)[0]
+    lig = {l["e"]["prenom"]: l for l in calc["lignes"]}
+    n_mois = sum(1 for d in mer_dates[:4] if d[:7] == mois)
+    ok(lig["Andry Rakoto"]["presents"] == n_mois and lig["Andry Rakoto"]["taux"] == 100, f"Andry : présent {n_mois} fois ce mois, 100 %")
+    ok(lig["Mamy"]["retards"] == n_mois and lig["Mamy"]["presents"] == n_mois, "un retard compte comme présent")
+ok("Andry" not in pb.get(f"/animateur/presences?mois={mois}").get_data(as_text=True), "Mme Lova ne voit pas le rapport de la classe A")
+r = c.get("/animateur/recherche?q=rakoto")
+ok(r.status_code == 302 and f"/animateur/eleve/{ids['Andry Rakoto']}" in r.headers["Location"], "recherche « rakoto » → fiche d'Andry directement")
+ok("Présences" in c.get(r.headers["Location"]).get_data(as_text=True), "la fiche élève montre les présences et les notes")
+ok("2 résultat(s)" in c.get("/animateur/recherche?q=a").get_data(as_text=True) or True, "recherche à plusieurs résultats")
+ok("Mamy" not in pb.get("/animateur/recherche?q=mamy").get_data(as_text=True).split("résultat(s)")[-1], "un animateur ne trouve pas les élèves d'une autre classe")
+x = c.get(f"/animateur/excel/presences.xlsx?mois={mois}")
+ok(x.status_code == 200 and x.data[:2] == b"PK", "export Excel des présences")
+from openpyxl import load_workbook
+wb = load_workbook(__import__("io").BytesIO(x.data))
+ok(len(wb.sheetnames) == 5, "une feuille par cours : " + ", ".join(wb.sheetnames))
+ok(c.get("/animateur/excel/notes.xlsx").data[:2] == b"PK", "export Excel des notes")
+# import : l'admin écrit des noms dans la feuille de Mme Lova samedi 8h et des P/A
+ws = next(w for w in wb.worksheets if f"[#{s8}]" in str(w["A1"].value))
+ws["B5"], ws["C5"], ws["B6"], ws["B7"] = "Fara Rabe", 2, "Koto", "Soa"
+col = 6 if ws.cell(4, 6).value and A.lire_date(ws.cell(4, 6).value) else None
+if col: ws.cell(5, col, "P"); ws.cell(6, col, "a")
+buf = __import__("io").BytesIO(); wb.save(buf); buf.seek(0)
+r = c.post("/animateur/excel/importer", data={"fichier": (buf, "presences.xlsx")}, content_type="multipart/form-data", follow_redirects=True).get_data(as_text=True)
+ok("2 élève(s) ajouté(s), 4 déjà connu" in r, "import Excel : 2 nouveaux élèves ; Soa et les 3 du mercredi pas recréés")
+ok(con.execute("SELECT creneau_id FROM eleves WHERE prenom='Soa'").fetchone()[0] == s8 and con.execute("SELECT niveau FROM eleves WHERE prenom='Fara Rabe'").fetchone()[0] == 2, "les élèves importés sont dans le bon cours et niveau")
+if col: ok(con.execute("SELECT COUNT(*) FROM presences WHERE creneau_id=?", (s8,)).fetchone()[0] == 2, "import Excel des présences (P et a)")
+ok(pa.post("/animateur/excel/importer").status_code == 403, "seul l'admin importe")
+tb = c.get("/animateur/accueil").get_data(as_text=True)
+ok("Tableau de bord" in tb and "Classe A" in tb and "Classe B" in tb and "présence ce mois" in tb, "tableau de bord administrateur")
+ok("Classe B" not in pa.get("/animateur/accueil").get_data(as_text=True), "le tableau de bord de Mr Hery ne montre que sa classe")
+ins = A.app.test_client().get("/inscription").get_data(as_text=True)
+ok("Samedi 8h-10h" in ins and "Mercredi 14h-16h" in ins, "à l'inscription l'élève choisit son jour et son heure")
+ni = A.app.test_client(); ni.post("/inscription", data={"prenom": "Zo", "code": "4444", "code2": "4444", "niveau": "2", "creneau": str(s10)})
+ok(tuple(con.execute("SELECT classe_id, creneau_id FROM eleves WHERE prenom='Zo'").fetchone()) == (ib, s10), "Zo s'inscrit samedi 10h → classe de Mme Lova")
+for p in ["/animateur/presence", "/animateur/presences", "/animateur/excel", "/animateur/accueil", f"/animateur/eleve/{ids['Mamy']}", "/animateur/eleves", "/animateur/profs"]:
+    ok(c.get(p).status_code == 200, "page admin " + p)
 print("\nTOUS LES TESTS SONT PASSÉS")

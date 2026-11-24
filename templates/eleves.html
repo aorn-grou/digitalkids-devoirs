@@ -5,23 +5,28 @@
 {% block contenu %}
 <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end"><h1 class="titre-page">Élèves</h1>{% include '_filtre.html' %}</div>
 <div class="grille-admin" style="margin-top:16px;align-items:start">
+  {% if role == 'admin' %}
   <form class="carte" method="post" style="display:grid;gap:10px">
     <h2 style="color:var(--nuit)">Ajouter des élèves</h2>
-    <p class="aide" style="margin:0">Écrivez <b>un prénom par ligne</b>. Le logiciel crée l'identifiant et le code de chaque enfant.</p>
-    <label for="prenoms">Prénoms</label>
-    <textarea id="prenoms" name="prenoms" rows="8" placeholder="Rivo&#10;Lala&#10;Hery" required></textarea>
+    <p class="aide" style="margin:0">Écrivez <b>un nom par ligne</b>. Le logiciel crée l'identifiant et le code de chaque enfant. Pour beaucoup d'élèves, utilisez <a href="{{ url_for('excel') }}">Excel</a>.</p>
+    <label for="prenoms">Prénoms et noms</label>
+    <textarea id="prenoms" name="prenoms" rows="8" placeholder="Rivo Rakoto&#10;Lala Rasoa&#10;Hery" required></textarea>
+    {% if creneaux %}<label for="creneau">Cours (classe, jour et heure)</label>
+    <select id="creneau" name="creneau" required>{% for c in creneaux %}<option value="{{ c.id }}">{{ c.libelle }} · {{ c.nom }}</option>{% endfor %}</select>
+    {% else %}<p class="aide" style="margin:0">⚠ Créez d'abord les jours de cours dans <a href="{{ url_for('profs') }}">Animateurs & cours</a>.</p>{% endif %}
     <label for="niveau">Niveau</label>
     <select id="niveau" name="niveau"><option value="1">Niveau 1</option><option value="2">Niveau 2</option></select>
-    {% if role == 'admin' %}<label for="classe">Classe</label>
-    <select id="classe" name="classe">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if classe_choisie == c.id|string }}>{{ c.classe }} · {{ c.nom }}</option>{% endfor %}<option value="">Sans classe</option></select>{% endif %}
     <input type="hidden" name="classe_filtre" value="{{ classe_choisie }}">
     <button class="btn" type="submit">Ajouter</button>
   </form>
-  <div class="carte" style="grid-column:span 2;min-width:0">
+  {% endif %}
+  <div class="carte" style="grid-column:{{ 'span 2' if role == 'admin' else '1/-1' }};min-width:0">
     <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><h2 style="color:var(--nuit)">{{ eleves|length }} élève(s)</h2><a class="btn petit bleu" href="{{ url_for('fiches', **({'classe': classe_choisie} if classe_choisie else {})) }}">Imprimer les fiches de connexion</a></div>
     <div class="defile" style="margin-top:10px"><table class="tableau-notes">
-      <tr><th>Prénom</th>{% if role == 'admin' %}<th>Classe</th>{% endif %}<th>Niveau</th><th>Identifiant</th><th>Code</th><th></th></tr>
-      {% for e in eleves %}<tr><td><b>{{ e.prenom }}</b></td>{% if role == 'admin' %}<td>{{ noms[e.classe_id].classe if e.classe_id in noms else '—' }}</td>{% endif %}<td>{{ e.niveau }}</td><td><code>{{ e.identifiant }}</code></td><td><code>{{ e.code }}</code></td><td><a href="{{ url_for('eleve_detail', eid=e.id) }}">Voir / modifier</a></td></tr>{% endfor %}
+      <tr><th>Nom</th>{% if role == 'admin' %}<th>Classe</th>{% endif %}<th>Cours</th><th>Niveau</th><th>Identifiant</th><th>Code</th><th></th></tr>
+      {% for e in eleves %}<tr><td><b>{{ e.prenom }}</b></td>{% if role == 'admin' %}<td>{{ noms[e.classe_id].classe if e.classe_id in noms else '—' }}</td>{% endif %}
+        <td>{% if e.creneau_id in noms_cr %}{{ noms_cr[e.creneau_id].horaire }}{% else %}<span class="chip orange">à placer</span>{% endif %}</td>
+        <td>{{ e.niveau }}</td><td><code>{{ e.identifiant }}</code></td><td><code>{{ e.code }}</code></td><td><a href="{{ url_for('eleve_detail', eid=e.id) }}">Voir / modifier</a></td></tr>{% endfor %}
     </table></div>
   </div>
 </div>
