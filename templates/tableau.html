@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titre %}Tableau des notes · Digital Kids{% endblock %}
+{% block ruban %}<a class="on" href="{{ url_for('tableau') }}">Tableau des notes</a><a href="{{ url_for('eleves') }}">Élèves</a><a href="{{ url_for('devoirs_admin') }}">Devoirs</a><a href="{{ url_for('fiches') }}">Fiches de connexion</a><a href="{{ url_for('mot_de_passe') }}">Mot de passe</a>{% endblock %}
+{% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
+{% block contenu %}
+<div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+  <div><h1 class="titre-page">Tableau des notes</h1><p class="sous">Moyenne sur 20 de chaque élève pour chaque devoir. Cliquez sur un prénom pour voir le détail.</p></div>
+  <a class="btn petit bleu" href="{{ url_for('notes_csv') }}">Télécharger les notes (Excel / CSV)</a>
+</div>
+{% if not eleves %}<div class="carte" style="margin-top:18px"><h2>Aucun élève pour l'instant</h2><p>Commencez par <a href="{{ url_for('eleves') }}">ajouter vos élèves</a> : le logiciel crée leur identifiant et leur code.</p></div>{% endif %}
+{% for niv in [1, 2, 3] %}
+{% set els = eleves|selectattr('niveau', 'equalto', niv)|list %}
+{% set dvs = devoirs|selectattr('niveau', 'equalto', niv)|list %}
+{% if els %}
+<h2 style="margin:24px 0 10px;color:var(--bleu)">Niveau {{ niv }} · {{ els|length }} élève(s)</h2>
+<div class="defile"><table class="tableau-notes">
+  <tr><th>Élève</th><th>Identifiant</th>{% for d in dvs %}<th>{{ d.titre|truncate(34) }}</th>{% endfor %}</tr>
+  {% for e in els %}<tr>
+    <td><a href="{{ url_for('eleve_detail', eid=e.id) }}"><b>{{ e.prenom }}</b></a></td><td>{{ e.identifiant }}</td>
+    {% for d in dvs %}{% set n = notes.get((e.id, d.id)) %}
+      <td>{% if n %}<span class="chip {{ 'vert' if n[1] >= 14 else ('orange' if n[1] >= 10 else 'rouge') }}">{{ n[1] }}/20</span> <span class="aide">{{ n[0] }}/{{ nb_ex[d.id] }}</span>{% else %}<span class="chip gris">pas fait</span>{% endif %}</td>
+    {% endfor %}
+  </tr>{% endfor %}
+</table></div>
+{% endif %}
+{% endfor %}
+{% endblock %}

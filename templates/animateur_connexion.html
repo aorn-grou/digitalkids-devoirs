@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titre %}Espace animateur · Digital Kids{% endblock %}
+{% block qui %}<a class="btn-lien" href="{{ url_for('connexion') }}">Espace élève</a>{% endblock %}
+{% block contenu %}
+<form class="carte form-connexion" method="post" style="max-width:460px;margin:0 auto" autocomplete="off">
+  <span class="pastille" style="justify-self:start">ESPACE ANIMATEUR</span>
+  {% if premier %}
+    <h1 style="font-size:28px;color:var(--nuit)">Créez votre mot de passe</h1>
+    <p class="sous">Première visite : choisissez le mot de passe de l'animateur (6 caractères ou plus). Notez-le bien.</p>
+  {% else %}
+    <h1 style="font-size:28px;color:var(--nuit)">Connexion animateur</h1>
+  {% endif %}
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  <label for="mot_de_passe">Mot de passe</label>
+  <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+  {% if premier %}<label for="confirmation">Écrivez-le une 2e fois</label><input type="password" id="confirmation" name="confirmation" required>{% endif %}
+  <button class="btn bleu" type="submit">{{ 'Créer et entrer' if premier else 'Entrer' }} ➜</button>
+</form>
+{% endblock %}

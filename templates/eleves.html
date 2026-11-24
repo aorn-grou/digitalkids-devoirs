@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titre %}Élèves · Digital Kids{% endblock %}
+{% block ruban %}<a href="{{ url_for('tableau') }}">Tableau des notes</a><a class="on" href="{{ url_for('eleves') }}">Élèves</a><a href="{{ url_for('devoirs_admin') }}">Devoirs</a><a href="{{ url_for('fiches') }}">Fiches de connexion</a><a href="{{ url_for('mot_de_passe') }}">Mot de passe</a>{% endblock %}
+{% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
+{% block contenu %}
+<h1 class="titre-page">Élèves</h1>
+<div class="grille-admin" style="margin-top:16px;align-items:start">
+  <form class="carte" method="post" style="display:grid;gap:10px">
+    <h2 style="color:var(--nuit)">Ajouter des élèves</h2>
+    <p class="aide" style="margin:0">Écrivez <b>un prénom par ligne</b>. Le logiciel crée l'identifiant et le code de chaque enfant.</p>
+    <label for="prenoms">Prénoms</label>
+    <textarea id="prenoms" name="prenoms" rows="8" placeholder="Rivo&#10;Lala&#10;Hery" required></textarea>
+    <label for="niveau">Niveau</label>
+    <select id="niveau" name="niveau"><option value="1">Niveau 1</option><option value="2">Niveau 2</option><option value="3">Niveau 3</option></select>
+    <button class="btn" type="submit">Ajouter</button>
+  </form>
+  <div class="carte" style="grid-column:span 2;min-width:0">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><h2 style="color:var(--nuit)">{{ eleves|length }} élève(s)</h2><a class="btn petit bleu" href="{{ url_for('fiches') }}">Imprimer les fiches de connexion</a></div>
+    <div class="defile" style="margin-top:10px"><table class="tableau-notes">
+      <tr><th>Prénom</th><th>Niveau</th><th>Identifiant</th><th>Code</th><th></th></tr>
+      {% for e in eleves %}<tr><td><b>{{ e.prenom }}</b></td><td>{{ e.niveau }}</td><td><code>{{ e.identifiant }}</code></td><td><code>{{ e.code }}</code></td><td><a href="{{ url_for('eleve_detail', eid=e.id) }}">Voir / modifier</a></td></tr>{% endfor %}
+    </table></div>
+  </div>
+</div>
+{% endblock %}

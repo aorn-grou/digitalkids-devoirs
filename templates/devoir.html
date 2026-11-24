@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block titre %}{{ devoir.titre }} · Digital Kids{% endblock %}
+{% block qui %}
+{% if eleve %}<span>👋 {{ eleve.prenom }}</span><a class="btn-lien" href="{{ url_for('mes_devoirs') }}">Mes devoirs</a><a class="btn-lien" href="{{ url_for('deconnexion') }}">Sortir</a>
+{% else %}<span class="pastille">APERÇU ANIMATEUR</span><a class="btn-lien" href="{{ url_for('devoirs_admin') }}">Retour</a>{% endif %}
+{% endblock %}
+{% block contenu %}
+<div class="entete-devoir">
+  <div>
+    <span class="pastille">{{ devoir.semaine or 'Devoir' }} · Niveau {{ devoir.niveau }}</span>
+    <h1 class="titre-page" style="margin-top:8px">{{ devoir.titre }}</h1>
+    <p class="sous">{{ devoir.intro|safe }}</p>
+  </div>
+</div>
+<div class="suivi" id="suivi">
+  <b id="suivi-txt">0 / {{ devoir.exercices|length }} exercices validés</b>
+  <div class="barre"><i id="suivi-barre" style="width:0%"></i></div>
+  <span>Moyenne : <b id="suivi-moy">–</b> /20</span>
+</div>
+{% for e in devoir.exercices %}
+<section class="carte exo" id="exo-{{ e.id }}" data-id="{{ e.id }}">
+  <div class="exo-tete"><span class="num">{{ loop.index }}</span><h2>{{ e.titre }}</h2></div>
+  <div class="lecon">{{ e.lecon|safe }}</div>
+  <p class="consigne">{{ e.consigne|safe }}</p>
+  <div class="zone" id="zone-{{ e.id }}"></div>
+  <div class="pied-exo">
+    {% if e.pratique %}<a class="pratique" href="{{ e.pratique.url }}" target="_blank" rel="noopener">↗ {{ e.pratique.texte }}</a>{% else %}<span></span>{% endif %}
+    <button class="btn valider" type="button" data-id="{{ e.id }}">Valider ✓</button>
+  </div>
+  <div class="resultat" id="res-{{ e.id }}" hidden></div>
+</section>
+{% endfor %}
+<div class="carte" id="fin" style="margin-top:24px;text-align:center" hidden>
+  <h2 style="font-size:30px;color:var(--nuit)">Bravo, tu as terminé ton devoir ! 🎉</h2>
+  <p style="font-size:20px;font-weight:800">Ta moyenne : <span id="fin-moy"></span> / 20</p>
+  {% if eleve %}<a class="btn bleu" href="{{ url_for('mes_devoirs') }}">Retour à mes devoirs</a>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+window.DEVOIR = {{ devoir|tojson }};
+window.FAITS = {{ faits|tojson }};
+window.APERCU = {{ 'true' if apercu else 'false' }};
+window.CORRIGES = {{ (corriges or {})|tojson }};
+window.URL_VALIDER = "{{ url_for('valider') }}";
+</script>
+<script src="{{ url_for('static', filename='devoir.js') }}?v=3"></script>
+{% endblock %}

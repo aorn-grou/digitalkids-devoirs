@@ -1,0 +1,601 @@
+{
+ "id": "n2-devoir-1",
+ "niveau": 2,
+ "semaine": "Semaine du 24 novembre 2026",
+ "titre": "Devoir niveau 2 · Logique, algorithmes et Scratch",
+ "intro": "Lis la petite leçon, fais l'exercice, puis clique sur <b>Valider</b>. Attention : après « Valider », tu ne peux plus changer ta réponse.",
+ "exercices": [
+  {
+   "id": "e1",
+   "titre": "Trouve la suite",
+   "lecon": "<p>Une <b>suite</b> suit une règle : 2, 4, 6, 8 → on ajoute 2. Pour trouver le nombre suivant, je cherche ce qui change d'un nombre à l'autre.</p>",
+   "consigne": "Trouve ce qui vient ensuite.",
+   "type": "quiz",
+   "data": {
+    "items": [
+     {
+      "kind": "champ",
+      "q": "5, 10, 15, 20, …"
+     },
+     {
+      "kind": "champ",
+      "q": "2, 4, 8, 16, …"
+     },
+     {
+      "kind": "champ",
+      "q": "30, 27, 24, …"
+     },
+     {
+      "kind": "choix",
+      "q": "● ▲ ▲ ● ▲ ▲ ● … … : quelles formes viennent ensuite ?",
+      "options": [
+       "● ●",
+       "▲ ▲",
+       "● ▲",
+       "▲ ●"
+      ]
+     }
+    ]
+   },
+   "solution": {
+    "reponses": [
+     [
+      "25"
+     ],
+     [
+      "32"
+     ],
+     [
+      "21"
+     ],
+     1
+    ]
+   },
+   "corrige": "25 (+5) · 32 (on double) · 21 (−3) · ▲ ▲ (un rond, deux triangles)."
+  },
+  {
+   "id": "e2",
+   "titre": "L'intrus",
+   "lecon": "<p>Un <b>intrus</b> est celui qui ne suit pas la règle du groupe. Je cherche d'abord ce que les autres ont en commun.</p>",
+   "consigne": "Dans chaque groupe, choisis l'intrus.",
+   "type": "quiz",
+   "data": {
+    "items": [
+     {
+      "kind": "choix",
+      "q": "a) chat · lion · zébu · avion",
+      "options": [
+       "chat",
+       "lion",
+       "zébu",
+       "avion"
+      ]
+     },
+     {
+      "kind": "choix",
+      "q": "b) 11 · 13 · 15 · 18",
+      "options": [
+       "11",
+       "13",
+       "15",
+       "18"
+      ]
+     },
+     {
+      "kind": "choix",
+      "q": "c) Scratch · Python · Writer · ballon",
+      "options": [
+       "Scratch",
+       "Python",
+       "Writer",
+       "ballon"
+      ]
+     }
+    ]
+   },
+   "solution": {
+    "reponses": [
+     3,
+     3,
+     3
+    ]
+   },
+   "corrige": "a) avion (pas un animal) · b) 18 (le seul nombre pair) · c) ballon (pas un logiciel)."
+  },
+  {
+   "id": "e3",
+   "titre": "Pair ou impair ?",
+   "lecon": "<p><b>Classer</b>, c'est ranger selon une règle. Un nombre <b>pair</b> se partage en deux parts égales : 2, 4, 6, 8, 10… Les autres sont <b>impairs</b>.</p>",
+   "consigne": "Range chaque nombre dans la bonne colonne.",
+   "type": "classer",
+   "data": {
+    "categories": [
+     "Pair",
+     "Impair"
+    ],
+    "items": [
+     "4",
+     "9",
+     "12",
+     "15",
+     "22",
+     "7"
+    ]
+   },
+   "solution": {
+    "4": "Pair",
+    "9": "Impair",
+    "12": "Pair",
+    "15": "Impair",
+    "22": "Pair",
+    "7": "Impair"
+   },
+   "corrige": "Pairs : 4, 12, 22 · Impairs : 9, 15, 7."
+  },
+  {
+   "id": "e4",
+   "titre": "Mon affiche « Mon sport préféré »",
+   "lecon": "<p>Les 4 règles d'une bonne affiche : un <b>grand titre</b> en gras, une <b>image</b>, <b>peu de mots</b>, un titre <b>centré</b>.</p>",
+   "consigne": "Fabrique ton affiche avec les boutons. Écris le nom de ton sport dans le titre.",
+   "type": "affiche",
+   "data": {
+    "titre": "MON SPORT PRÉFÉRÉ"
+   },
+   "solution": {
+    "regles": [
+     "grand_titre",
+     "image",
+     "peu_de_mots",
+     "centre"
+    ]
+   },
+   "corrige": "Grand titre en gras · une image · peu de mots · titre centré : 5 points par règle."
+  },
+  {
+   "id": "e5",
+   "titre": "Guide le robot",
+   "lecon": "<p>Un robot comprend des ordres précis : <b>→ droite, ← gauche, ↑ haut, ↓ bas</b>. Une suite d'ordres dans le bon ordre s'appelle un <b>algorithme</b>.</p>",
+   "consigne": "Clique sur les flèches pour emmener le robot 🤖 jusqu'au drapeau 🚩 sans passer sur les cases noires. Clique sur « Tester » pour voir s'il arrive.",
+   "type": "chemin",
+   "data": {
+    "grille": [
+     [
+      "R",
+      "",
+      "",
+      ""
+     ],
+     [
+      "#",
+      "#",
+      "",
+      "#"
+     ],
+     [
+      "",
+      "",
+      "",
+      "#"
+     ],
+     [
+      "",
+      "#",
+      "",
+      "D"
+     ]
+    ]
+   },
+   "solution": {
+    "grille": [
+     [
+      "R",
+      "",
+      "",
+      ""
+     ],
+     [
+      "#",
+      "#",
+      "",
+      "#"
+     ],
+     [
+      "",
+      "",
+      "",
+      "#"
+     ],
+     [
+      "",
+      "#",
+      "",
+      "D"
+     ]
+    ]
+   },
+   "corrige": "Un chemin juste : → → ↓ ↓ ↓ → (droite, droite, bas, bas, bas, droite)."
+  },
+  {
+   "id": "e6",
+   "titre": "Le cadenas",
+   "lecon": "<p>Un détective élimine ce qui est impossible. « <b>bien placé</b> » = bon chiffre à la bonne place · « <b>mal placé</b> » = le chiffre est dans le code, mais ailleurs · « <b>rien</b> » = ces chiffres ne sont pas dans le code.</p>",
+   "consigne": "Trouve le code du cadenas grâce aux indices.",
+   "type": "quiz",
+   "data": {
+    "html": "<table class='mini'><tr><th>Code</th><th>Indice</th></tr><tr><td>8 5 2</td><td>1 chiffre bon mais mal placé</td></tr><tr><td>7 5 0</td><td>rien n'est bon</td></tr><tr><td>1 5 6</td><td>1 bien placé et 1 mal placé</td></tr><tr><td>6 2 3</td><td>1 chiffre bon mais mal placé</td></tr><tr><td>5 1 0</td><td>1 chiffre bon mais mal placé</td></tr></table>",
+    "items": [
+     {
+      "kind": "champ",
+      "q": "Le code est :",
+      "placeholder": "3 chiffres"
+     }
+    ]
+   },
+   "solution": {
+    "reponses": [
+     [
+      "168"
+     ]
+    ]
+   },
+   "corrige": "1 6 8. 7, 5, 0 ne sont pas dans le code ; 1 est en 1re place, 6 au milieu, 8 à la fin."
+  },
+  {
+   "id": "e7",
+   "titre": "Le Mastermind",
+   "lecon": "<p>● = bonne couleur <b>bien placée</b> · ○ = bonne couleur <b>mal placée</b>. On compare chaque essai pour éliminer des couleurs.</p>",
+   "consigne": "Code de 3 couleurs parmi Rouge, Bleu, Vert, Jaune (pas deux fois la même). Essai 1 : Rouge – Bleu – Vert → ○ ○. Essai 2 : Rouge – Bleu – Jaune → ● ○ ○. Choisis les 3 couleurs du code.",
+   "type": "quiz",
+   "data": {
+    "items": [
+     {
+      "kind": "choix",
+      "q": "1re couleur",
+      "options": [
+       "Rouge",
+       "Bleu",
+       "Vert",
+       "Jaune"
+      ]
+     },
+     {
+      "kind": "choix",
+      "q": "2e couleur",
+      "options": [
+       "Rouge",
+       "Bleu",
+       "Vert",
+       "Jaune"
+      ]
+     },
+     {
+      "kind": "choix",
+      "q": "3e couleur",
+      "options": [
+       "Rouge",
+       "Bleu",
+       "Vert",
+       "Jaune"
+      ]
+     }
+    ]
+   },
+   "solution": {
+    "reponses": [
+     1,
+     0,
+     3
+    ]
+   },
+   "corrige": "Bleu – Rouge – Jaune. Vert n'est pas dans le code (essai 2), Jaune est bien placé, Rouge et Bleu sont échangés."
+  },
+  {
+   "id": "e8",
+   "titre": "Le Tangram",
+   "lecon": "<p>Le Tangram a <b>7 pièces</b> : 5 triangles (2 grands, 1 moyen, 2 petits), 1 carré et 1 parallélogramme. On utilise les 7 pièces sans les superposer.</p>",
+   "consigne": "Réponds aux 3 questions.",
+   "type": "quiz",
+   "data": {
+    "items": [
+     {
+      "kind": "choix",
+      "q": "Combien de triangles ?",
+      "options": [
+       "3",
+       "4",
+       "5",
+       "7"
+      ]
+     },
+     {
+      "kind": "choix",
+      "q": "Quelle pièce peut se retourner ?",
+      "options": [
+       "le carré",
+       "le parallélogramme",
+       "le grand triangle"
+      ]
+     },
+     {
+      "kind": "choix",
+      "q": "Avec les 2 grands triangles, on peut faire…",
+      "options": [
+       "un cercle",
+       "un carré",
+       "une étoile"
+      ]
+     }
+    ]
+   },
+   "solution": {
+    "reponses": [
+     2,
+     1,
+     1
+    ]
+   },
+   "corrige": "5 triangles · le parallélogramme · un carré (ou un grand triangle).",
+   "pratique": {
+    "texte": "S'entraîner au Tangram",
+    "url": "https://www.logicieleducatif.fr/jeu/tangram-en-ligne"
+   }
+  },
+  {
+   "id": "e9",
+   "titre": "Morpion : gagne !",
+   "lecon": "<p>Avant de jouer, je me pose 2 questions : <b>1) puis-je gagner ?</b> <b>2) dois-je bloquer ?</b> Une ligne gagnante peut être horizontale, verticale ou en diagonale.</p>",
+   "consigne": "C'est à X de jouer. Clique sur la case où X gagne tout de suite.",
+   "type": "grille_clic",
+   "data": {
+    "plateau": [
+     [
+      "X",
+      "",
+      "O"
+     ],
+     [
+      "O",
+      "X",
+      ""
+     ],
+     [
+      "",
+      "",
+      ""
+     ]
+    ],
+    "cols": "ABC",
+    "rows": "123",
+    "pion": "X"
+   },
+   "solution": {
+    "cases": [
+     "C3"
+    ]
+   },
+   "corrige": "C3 : la diagonale A1 – B2 – C3."
+  },
+  {
+   "id": "e10",
+   "titre": "Les coordonnées",
+   "lecon": "<p>Pour lire une case, on donne <b>la lettre de la colonne</b>, puis <b>le chiffre de la ligne</b> : B3, E1…</p>",
+   "consigne": "Écris la case de chaque étoile.",
+   "type": "quiz",
+   "data": {
+    "html": "<table class='gridtab'><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr><tr><th>1</th><td>★</td><td></td><td></td><td></td><td></td></tr><tr><th>2</th><td></td><td></td><td>★</td><td></td><td></td></tr><tr><th>3</th><td></td><td></td><td></td><td></td><td>★</td></tr></table>",
+    "items": [
+     {
+      "kind": "champ",
+      "q": "Étoile de la ligne 1"
+     },
+     {
+      "kind": "champ",
+      "q": "Étoile de la ligne 2"
+     },
+     {
+      "kind": "champ",
+      "q": "Étoile de la ligne 3"
+     }
+    ]
+   },
+   "solution": {
+    "reponses": [
+     [
+      "a1"
+     ],
+     [
+      "c2"
+     ],
+     [
+      "e3"
+     ]
+    ]
+   },
+   "corrige": "A1 · C2 · E3."
+  },
+  {
+   "id": "e11",
+   "titre": "Remets dans l'ordre",
+   "lecon": "<p>Un ordinateur fait <b>exactement</b> ce qu'on lui dit, <b>dans l'ordre</b>. Si un ordre est mal placé, c'est un <b>bug</b>.</p>",
+   "consigne": "Pour se laver les mains : donne un numéro de 1 à 4 à chaque étape.",
+   "type": "ordre",
+   "data": {
+    "items": [
+     "se sécher",
+     "ouvrir le robinet",
+     "se savonner",
+     "rincer"
+    ]
+   },
+   "solution": {
+    "ordre": [
+     "ouvrir le robinet",
+     "se savonner",
+     "rincer",
+     "se sécher"
+    ]
+   },
+   "corrige": "1 ouvrir le robinet · 2 se savonner · 3 rincer · 4 se sécher."
+  },
+  {
+   "id": "e12",
+   "titre": "Calcule la boucle",
+   "lecon": "<p>Une <b>boucle</b> répète les blocs qui sont dedans : <span class=\"blk ct\">répéter 4 fois</span> <span class=\"blk mv\">avancer de 10 pas</span> = 4 × 10 = 40 pas.</p>",
+   "consigne": "Calcule.",
+   "type": "quiz",
+   "data": {
+    "items": [
+     {
+      "kind": "champ",
+      "q": "répéter 4 fois · avancer de 25 pas → combien de pas ?"
+     },
+     {
+      "kind": "champ",
+      "q": "répéter 10 fois · avancer de 3 pas → combien de pas ?"
+     },
+     {
+      "kind": "choix",
+      "q": "répéter 3 fois · avancer de 100 pas · tourner de 120 degrés → le chat dessine…",
+      "options": [
+       "un carré",
+       "un triangle",
+       "un cercle"
+      ]
+     }
+    ]
+   },
+   "solution": {
+    "reponses": [
+     [
+      "100"
+     ],
+     [
+      "30"
+     ],
+     1
+    ]
+   },
+   "corrige": "100 pas · 30 pas · un triangle."
+  },
+  {
+   "id": "e13",
+   "titre": "Si… alors… sinon",
+   "lecon": "<p>Un programme peut <b>choisir</b> : <b>SI</b> c'est vrai, <b>ALORS</b> il fait ceci, <b>SINON</b> il fait cela.</p>",
+   "consigne": "Réponds aux 2 questions.",
+   "type": "quiz",
+   "data": {
+    "items": [
+     {
+      "kind": "choix",
+      "q": "SI j'ai soif, ALORS…",
+      "options": [
+       "je bois de l'eau",
+       "je mets un pull",
+       "je vais dormir"
+      ]
+     },
+     {
+      "kind": "choix",
+      "q": "si touche bord ? alors dire « Ouille ! » sinon dire « Ça va ». Le chat est au milieu de la scène. Il dit :",
+      "options": [
+       "Ouille !",
+       "Ça va",
+       "rien"
+      ]
+     }
+    ]
+   },
+   "solution": {
+    "reponses": [
+     0,
+     1
+    ]
+   },
+   "corrige": "je bois de l'eau · « Ça va » (il ne touche pas le bord, donc c'est le « sinon »)."
+  },
+  {
+   "id": "e14",
+   "titre": "Attrape la pomme",
+   "lecon": "<p>Dans le jeu, la pomme vérifie sans arrêt : <b>SI</b> elle touche le chat, <b>ALORS</b> +1 point et elle saute ailleurs. Le score commence à 0.</p>",
+   "consigne": "Clique sur les blocs dans le bon ordre pour construire le programme de la pomme.",
+   "type": "blocs",
+   "data": {
+    "blocs": [
+     {
+      "t": "si touche Sprite1 ? alors",
+      "c": "ct"
+     },
+     {
+      "t": "ajouter 1 à score",
+      "c": "vr"
+     },
+     {
+      "t": "quand 🏁 est cliqué",
+      "c": "ev"
+     },
+     {
+      "t": "aller à position aléatoire",
+      "c": "mv"
+     },
+     {
+      "t": "répéter indéfiniment",
+      "c": "ct"
+     },
+     {
+      "t": "mettre score à 0",
+      "c": "vr"
+     }
+    ]
+   },
+   "solution": {
+    "ordre": [
+     "quand 🏁 est cliqué",
+     "mettre score à 0",
+     "répéter indéfiniment",
+     "si touche Sprite1 ? alors",
+     "ajouter 1 à score",
+     "aller à position aléatoire"
+    ]
+   },
+   "corrige": "quand 🏁 est cliqué → mettre score à 0 → répéter indéfiniment → si touche Sprite1 ? alors → ajouter 1 à score → aller à position aléatoire.",
+   "pratique": {
+    "texte": "Faire le vrai jeu dans Scratch",
+    "url": "https://scratch.mit.edu/projects/editor"
+   }
+  },
+  {
+   "id": "e15",
+   "titre": "La famille des blocs",
+   "lecon": "<p>Chaque couleur de bloc est une famille : <b>jaune</b> = Événements · <b>orange</b> = Contrôle · <b>bleu</b> = Mouvement · <b>violet</b> = Apparence.</p>",
+   "consigne": "Pour chaque bloc, choisis sa famille.",
+   "type": "relier",
+   "data": {
+    "gauche": [
+     "rebondir si le bord est atteint",
+     "costume suivant",
+     "quand ce sprite est cliqué",
+     "répéter 10 fois"
+    ],
+    "droite": [
+     "Mouvement",
+     "Apparence",
+     "Événements",
+     "Contrôle"
+    ],
+    "couleurs": [
+     "mv",
+     "lk",
+     "ev",
+     "ct"
+    ]
+   },
+   "solution": {
+    "rebondir si le bord est atteint": "Mouvement",
+    "costume suivant": "Apparence",
+    "quand ce sprite est cliqué": "Événements",
+    "répéter 10 fois": "Contrôle"
+   },
+   "corrige": "rebondir → Mouvement · costume suivant → Apparence · quand ce sprite est cliqué → Événements · répéter 10 fois → Contrôle."
+  }
+ ]
+}

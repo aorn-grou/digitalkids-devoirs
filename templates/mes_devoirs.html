@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titre %}Mes devoirs · Digital Kids{% endblock %}
+{% block qui %}<span>👋 {{ eleve.prenom }}</span><span class="pastille">Niveau {{ eleve.niveau }}</span><a class="btn-lien" href="{{ url_for('deconnexion') }}">Sortir</a>{% endblock %}
+{% block contenu %}
+<h1 class="titre-page">Bonjour {{ eleve.prenom }} !</h1>
+<p class="sous">Voici tes devoirs. Clique sur un devoir pour le faire.</p>
+{% if not devoirs %}
+<div class="carte" style="margin-top:20px"><h2>Pas encore de devoir</h2><p>Ton animateur n'a pas encore mis de devoir pour le niveau {{ eleve.niveau }}. Reviens bientôt !</p></div>
+{% endif %}
+<div class="grille-devoirs">
+{% for d in devoirs %}
+  <a class="carte devoir-carte" href="{{ url_for('devoir', devoir_id=d.id) }}">
+    <span class="pastille" style="align-self:flex-start">{{ d.semaine or 'Devoir' }}</span>
+    <h2>{{ d.titre }}</h2>
+    <div class="barre"><i style="width:{{ (100 * d.faits / d.total)|round|int }}%"></i></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <span style="font-weight:800">{{ d.faits }} / {{ d.total }} exercices faits</span>
+      {% if d.moyenne is not none %}
+        <span class="note-ronde {{ 'n-faible' if d.moyenne < 10 else ('n-moy' if d.moyenne < 14 else '') }}">{{ d.moyenne }}<small>/20</small></span>
+      {% else %}<span class="note-ronde n-vide">–<small>/20</small></span>{% endif %}
+    </div>
+    <span class="btn petit" style="align-self:flex-start">{{ 'Continuer' if d.faits else 'Commencer' }} ➜</span>
+  </a>
+{% endfor %}
+</div>
+{% endblock %}

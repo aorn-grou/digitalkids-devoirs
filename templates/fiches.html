@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titre %}Fiches de connexion · Digital Kids{% endblock %}
+{% block ruban %}<a href="{{ url_for('tableau') }}">Tableau des notes</a><a href="{{ url_for('eleves') }}">Élèves</a><a href="{{ url_for('devoirs_admin') }}">Devoirs</a><a class="on" href="{{ url_for('fiches') }}">Fiches de connexion</a><a href="{{ url_for('mot_de_passe') }}">Mot de passe</a>{% endblock %}
+{% block qui %}<span class="pastille">ANIMATEUR</span><a class="btn-lien" href="{{ url_for('animateur_deconnexion') }}">Sortir</a>{% endblock %}
+{% block contenu %}
+<div class="no-print" style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+  <div><h1 class="titre-page">Fiches de connexion</h1><p class="sous">Imprimez cette page, découpez les fiches et donnez-en une à chaque enfant.</p></div>
+  <button class="btn" onclick="window.print()">Imprimer</button>
+</div>
+<div class="fiches">
+{% for e in eleves %}
+  <div class="fiche-login">
+    <div style="font:800 18px var(--titre);color:var(--bleu)">DIGITAL <span style="color:var(--orange)">KIDS</span> · Devoirs</div>
+    <div style="font:800 22px var(--titre)">{{ e.prenom }} <span class="aide">· niveau {{ e.niveau }}</span></div>
+    <div>Site : <b>{{ adresse }}</b></div>
+    <div>Identifiant : <b style="font-size:18px">{{ e.identifiant }}</b></div>
+    <div>Code secret : <b style="font-size:18px;letter-spacing:3px">{{ e.code }}</b></div>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

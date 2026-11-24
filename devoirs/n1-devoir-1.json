@@ -1,0 +1,296 @@
+{
+ "id": "n1-devoir-1",
+ "niveau": 1,
+ "semaine": "Semaine du 24 novembre 2026",
+ "titre": "Devoir niveau 1 · Clavier, souris, dossiers et Writer",
+ "intro": "Lis la petite leçon, fais l'exercice, puis clique sur <b>Valider</b>. Attention : après « Valider », tu ne peux plus changer ta réponse.",
+ "exercices": [
+  {
+   "id": "e1",
+   "titre": "Quel doigt tape la touche ?",
+   "lecon": "<p>Les doigts se posent sur la <b>rangée du milieu</b> : main gauche sur <kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd><kbd>F</kbd>, main droite sur <kbd>J</kbd><kbd>K</kbd><kbd>L</kbd><kbd>M</kbd>. Les touches <kbd>F</kbd> et <kbd>J</kbd> ont une petite bosse.</p>",
+   "consigne": "Pour chaque touche, choisis le doigt qui la tape.",
+   "type": "relier",
+   "data": {
+    "gauche": [
+     "F",
+     "J",
+     "Q",
+     "M"
+    ],
+    "droite": [
+     "index gauche",
+     "index droit",
+     "auriculaire gauche",
+     "auriculaire droit"
+    ]
+   },
+   "solution": {
+    "F": "index gauche",
+    "J": "index droit",
+    "Q": "auriculaire gauche",
+    "M": "auriculaire droit"
+   },
+   "corrige": "F = index gauche · J = index droit · Q = auriculaire gauche · M = auriculaire droit."
+  },
+  {
+   "id": "e2",
+   "titre": "Ma famille en majuscules",
+   "lecon": "<p>Un <b>prénom</b> commence toujours par une <b>majuscule</b>. Pour la faire : je garde <kbd>Maj ⇧</kbd> appuyée et je tape la lettre. Pour aller à la ligne : <kbd>Entrée</kbd>.</p>",
+   "consigne": "Tape les prénoms de 4 personnes de ta famille, <b>un par ligne</b>, avec une majuscule au début.",
+   "type": "texte",
+   "data": {
+    "lignes": 5,
+    "placeholder": "Rivo\nLala\n…"
+   },
+   "solution": {
+    "regle": "majuscules",
+    "min": 4
+   },
+   "corrige": "Chaque ligne doit commencer par une majuscule : Rivo, Lala, Hery, Mia…"
+  },
+  {
+   "id": "e3",
+   "titre": "é, è, à ou ç ?",
+   "lecon": "<p>Sur notre clavier AZERTY, les accents sont sur les touches des chiffres, <b>sans Maj</b> : <b>é</b> = touche 2 · <b>è</b> = touche 7 · <b>ç</b> = touche 9 · <b>à</b> = touche 0.</p>",
+   "consigne": "Complète chaque mot avec la bonne lettre. Tape-la avec ton clavier.",
+   "type": "trous",
+   "data": {
+    "texte": "le gar[]on · ma m[]re · l'[]cole · il va [] Tana · une le[]on<br>Pour taper è, j'appuie sur la touche [] · pour à, sur la touche []"
+   },
+   "solution": {
+    "reponses": [
+     [
+      "ç"
+     ],
+     [
+      "è"
+     ],
+     [
+      "é"
+     ],
+     [
+      "à"
+     ],
+     [
+      "ç"
+     ],
+     [
+      "7"
+     ],
+     [
+      "0"
+     ]
+    ],
+    "strict": true
+   },
+   "corrige": "garçon · mère · école · à Tana · leçon. è = touche 7 · à = touche 0."
+  },
+  {
+   "id": "e4",
+   "titre": "Les boutons d'une fenêtre",
+   "lecon": "<p>En haut à droite de chaque fenêtre, il y a 3 boutons : <b>—</b> réduire (la fenêtre va dans la barre en bas), <b>□</b> agrandir (plein écran), <b>✕</b> fermer.</p>",
+   "consigne": "Fais les 4 actions dans l'ordre : 1. agrandis la fenêtre · 2. réduis-la · 3. fais-la revenir en cliquant en bas · 4. ferme-la.",
+   "type": "fenetre",
+   "data": {
+    "etapes": [
+     "agrandir",
+     "reduire",
+     "restaurer",
+     "fermer"
+    ]
+   },
+   "solution": {
+    "etapes": [
+     "agrandir",
+     "reduire",
+     "restaurer",
+     "fermer"
+    ]
+   },
+   "corrige": "□ agrandit, — réduit (on la fait revenir en cliquant dans la barre), ✕ ferme."
+  },
+  {
+   "id": "e5",
+   "titre": "Vrai ou faux ?",
+   "lecon": "<p>Un <b>fichier</b>, c'est un travail (un texte, un dessin). Un <b>dossier</b>, c'est une boîte qui range des fichiers et d'autres dossiers. <kbd>Ctrl</kbd> + <kbd>S</kbd> enregistre. Un fichier supprimé va dans la <b>Corbeille</b>.</p>",
+   "consigne": "Pour chaque phrase, choisis Vrai ou Faux.",
+   "type": "vraifaux",
+   "data": {
+    "items": [
+     "Un dossier peut contenir d'autres dossiers.",
+     "Un fichier peut contenir un dossier.",
+     "Ctrl + S enregistre mon travail.",
+     "La Corbeille garde les fichiers supprimés."
+    ]
+   },
+   "solution": [
+    true,
+    false,
+    true,
+    true
+   ],
+   "corrige": "Vrai · Faux (c'est le dossier qui contient les fichiers) · Vrai · Vrai."
+  },
+  {
+   "id": "e6",
+   "titre": "Le dossier Dessins",
+   "lecon": "<p>Pour créer un dossier : je vais dans le bon dossier, puis <b>Nouveau dossier</b>, j'écris son nom. Pour entrer dans un dossier : double-clic.</p>",
+   "consigne": "Dans l'ordinateur ci-dessous, va dans <b>Mon dossier → Images</b> et crée un dossier <b>Dessins</b>.",
+   "type": "dossiers",
+   "data": {
+    "arbre": {
+     "Bureau": {
+      "Mon dossier": {
+       "Images": {},
+       "Textes": {
+        "poeme.txt": null
+       },
+       "Exercices": {}
+      }
+     }
+    },
+    "corbeille": {}
+   },
+   "solution": {
+    "buts": [
+     {
+      "existe": "Bureau/Mon dossier/Images/Dessins",
+      "dossier": true
+     }
+    ]
+   },
+   "corrige": "Bureau → Mon dossier → Images → Nouveau dossier → Dessins."
+  },
+  {
+   "id": "e7",
+   "titre": "Le bon nom de fichier",
+   "lecon": "<p>Un bon nom de fichier est <b>court et clair</b>, <b>sans espace</b> (on met un tiret) et sans accent : <b>mon-dessin</b>, <b>plat-prefere</b>.</p>",
+   "consigne": "Range chaque nom dans la bonne colonne.",
+   "type": "classer",
+   "data": {
+    "categories": [
+     "Bon nom",
+     "Mauvais nom"
+    ],
+    "items": [
+     "mon-dessin",
+     "Document1",
+     "plat prefere",
+     "recette-riz",
+     "Sans nom 1"
+    ]
+   },
+   "solution": {
+    "mon-dessin": "Bon nom",
+    "Document1": "Mauvais nom",
+    "plat prefere": "Mauvais nom",
+    "recette-riz": "Bon nom",
+    "Sans nom 1": "Mauvais nom"
+   },
+   "corrige": "Bons : mon-dessin, recette-riz. Mauvais : Document1 et Sans nom 1 (on ne sait pas ce que c'est), plat prefere (un espace)."
+  },
+  {
+   "id": "e8",
+   "titre": "Je range",
+   "lecon": "<p><b>Renommer</b> : choisir le fichier puis Renommer. <b>Déplacer</b> : choisir le fichier puis Déplacer vers… <b>Récupérer</b> un fichier supprimé : ouvrir la Corbeille, choisir le fichier, puis Restaurer.</p>",
+   "consigne": "1. Renomme le fichier <b>liste-courses</b> en <b>courses</b> et déplace-le dans <b>Exercices</b>. 2. Le dessin <b>soleil.png</b> a été supprimé par erreur : récupère-le depuis la Corbeille.",
+   "type": "dossiers",
+   "data": {
+    "arbre": {
+     "Bureau": {
+      "Mon dossier": {
+       "Images": {},
+       "Textes": {
+        "liste-courses.txt": null
+       },
+       "Exercices": {}
+      }
+     }
+    },
+    "corbeille": {
+     "soleil.png": "Bureau/Mon dossier/Images"
+    }
+   },
+   "solution": {
+    "buts": [
+     {
+      "existe": "Bureau/Mon dossier/Exercices/courses.txt"
+     },
+     {
+      "absent": "Bureau/Mon dossier/Textes/liste-courses.txt"
+     },
+     {
+      "existe": "Bureau/Mon dossier/Images/soleil.png"
+     }
+    ]
+   },
+   "corrige": "liste-courses → Renommer → courses, puis Déplacer vers → Exercices. Corbeille → soleil.png → Restaurer."
+  },
+  {
+   "id": "e9",
+   "titre": "Les raccourcis",
+   "lecon": "<p>La règle magique : <b>d'abord je sélectionne, ensuite je choisis</b>. <kbd>Ctrl</kbd>+<kbd>C</kbd> copier · <kbd>Ctrl</kbd>+<kbd>V</kbd> coller · <kbd>Ctrl</kbd>+<kbd>X</kbd> couper · <kbd>Ctrl</kbd>+<kbd>Z</kbd> annuler · <kbd>Ctrl</kbd>+<kbd>S</kbd> enregistrer.</p>",
+   "consigne": "Écris la bonne lettre après Ctrl +.",
+   "type": "trous",
+   "data": {
+    "texte": "Ctrl + [] = copier · Ctrl + [] = coller · Ctrl + [] = annuler<br>Ctrl + [] = enregistrer · Ctrl + [] = couper"
+   },
+   "solution": {
+    "reponses": [
+     [
+      "c"
+     ],
+     [
+      "v"
+     ],
+     [
+      "z"
+     ],
+     [
+      "s"
+     ],
+     [
+      "x"
+     ]
+    ],
+    "strict": false
+   },
+   "corrige": "C = copier · V = coller · Z = annuler · S = enregistrer · X = couper."
+  },
+  {
+   "id": "e10",
+   "titre": "Mon affiche « MON ÉCOLE »",
+   "lecon": "<p>Une bonne affiche se comprend en 3 secondes : un <b>grand titre</b> (taille 28 ou plus, en gras), une <b>image</b>, <b>peu de mots</b> et un titre <b>centré</b>.</p>",
+   "consigne": "Fabrique ton affiche « MON ÉCOLE » avec les boutons, puis valide. Regarde l'aperçu à droite.",
+   "type": "affiche",
+   "data": {
+    "titre": "MON ÉCOLE"
+   },
+   "solution": {
+    "regles": [
+     "grand_titre",
+     "image",
+     "peu_de_mots",
+     "centre"
+    ]
+   },
+   "corrige": "Grand titre en gras (28 ou plus) · une image · 1 ou 2 phrases courtes · titre centré : 5 points par règle."
+  },
+  {
+   "id": "e11",
+   "titre": "Test de vitesse (2 minutes)",
+   "lecon": "<p>On tape avec les <b>bons doigts</b>, <b>sans regarder</b> le clavier. D'abord bien taper, ensuite taper vite.</p>",
+   "consigne": "Clique sur <b>Commencer</b>, puis recopie le texte le plus de fois possible pendant 2 minutes, sans faute.",
+   "type": "frappe",
+   "data": {
+    "texte": "Le zébu tire la charrette dans la rizière. Les enfants le regardent passer.",
+    "duree": 120
+   },
+   "solution": {
+    "mots_cible": 20
+   },
+   "corrige": "La note compte les mots bien tapés : 20 mots justes ou plus en 2 minutes = 20/20."
+  }
+ ]
+}
