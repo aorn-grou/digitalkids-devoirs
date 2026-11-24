@@ -1,5 +1,6 @@
 """Test de bout en bout : animateur, élèves, devoirs, notes. Lancer : python3 outils/test_complet.py"""
 import json, os, re, shutil, sys, tempfile
+os.environ["DK_SANS_CLASSES"] = "1"
 ICI = os.path.dirname(os.path.abspath(__file__))
 RACINE = os.path.dirname(ICI)
 TMP = tempfile.mkdtemp()

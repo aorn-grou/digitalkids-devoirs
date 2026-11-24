@@ -13,7 +13,7 @@
 } %}
 {% set groupes = [
  ('Pilotage', [('tableau_de_bord','Tableau de bord'),('rapport_presence','Rapport de présence'),('rapports','Activité en ligne')]),
- ('Ma classe', [('presence','Fiche de présence'),('eleves','Élèves'),('tableau','Notes'),('devoirs_admin','Devoirs'),('fiches','Fiches de connexion')]),
+ ('Ma classe', [('eleves','Élèves par cours'),('presence','Fiche de présence (appel)'),('tableau','Notes'),('devoirs_admin','Devoirs'),('fiches','Fiches de connexion')]),
  ('Données', [('excel','Import / Export Excel')]),
  ('Réglages', ([('profs','Animateurs & cours')] if role == 'admin' else []) + [('mot_de_passe','Mot de passe')])
 ] %}

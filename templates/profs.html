@@ -22,7 +22,7 @@
     <div class="defile" style="margin-top:10px"><table class="tableau-notes">
       <tr><th>Classe</th><th>Animateur</th><th>Identifiant</th><th>Élèves</th><th>Jours et heures de cours</th><th></th></tr>
       {% for x in profs %}<tr>
-        <td><a href="{{ url_for('tableau', classe=x.p.id) }}"><b>{{ x.p.classe }}</b></a></td><td>{{ x.p.nom }}</td><td><code>{{ x.p.identifiant }}</code></td><td>{{ x.eleves }}</td>
+        <td><a href="{{ url_for('tableau', classe=x.p.id) }}"><b>{{ x.p.classe }}</b></a></td><td>{{ x.p.nom }}</td><td><code>{{ x.p.identifiant }}</code>{% if not x.p.mdp %}<br><span class="chip orange">mot de passe à choisir</span>{% endif %}</td><td>{{ x.eleves }}</td>
         <td>{% for c in x.creneaux %}<div class="cours-ligne"><b>{{ c.horaire }}</b> <span class="aide">{{ c.eleves }} élève(s)</span>
             <form method="post" style="display:inline" onsubmit="return confirm('Supprimer ce cours ?')"><input type="hidden" name="action" value="creneau_supprimer"><input type="hidden" name="creneau" value="{{ c.id }}"><button class="lien-x" title="Supprimer ce cours">✕</button></form></div>{% else %}<span class="aide">aucun</span>{% endfor %}
           <form method="post" class="ajout-cours"><input type="hidden" name="action" value="creneau"><input type="hidden" name="prof" value="{{ x.p.id }}">
@@ -31,7 +31,7 @@
             <button class="btn petit">+ Ajouter</button></form></td>
         <td style="white-space:nowrap">
           <form method="post" style="display:inline-flex;gap:6px;align-items:center"><input type="hidden" name="action" value="mdp"><input type="hidden" name="prof" value="{{ x.p.id }}">
-            <input name="mot_de_passe" placeholder="nouveau mot de passe" minlength="6" required style="width:170px" aria-label="Nouveau mot de passe"><button class="btn petit bleu">Changer</button></form>
+            <input name="mot_de_passe" placeholder="{{ 'choisir le mot de passe' if not x.p.mdp else 'nouveau mot de passe' }}" minlength="6" required style="width:190px" aria-label="Mot de passe"><button class="btn petit {{ '' if not x.p.mdp else 'bleu' }}">{{ 'Choisir' if not x.p.mdp else 'Changer' }}</button></form>
           <form method="post" style="display:inline" onsubmit="return this.querySelector('input[name=ok]').checked"><input type="hidden" name="action" value="supprimer"><input type="hidden" name="prof" value="{{ x.p.id }}"><label class="aide"><input type="checkbox" name="ok"> sûr</label> <button class="btn petit rouge">Supprimer</button></form>
         </td></tr>{% endfor %}
     </table></div>

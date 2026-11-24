@@ -99,7 +99,36 @@ def init_db():
     con.commit()
     if con.execute("SELECT COUNT(*) FROM devoirs").fetchone()[0] == 0:
         importer_dossier(con, None)
+    installer_classes_digital_kids(con)
     con.close()
+
+
+CLASSES_DIGITAL_KIDS = [
+    ("Prof Santatra", "santatra", "Classe Santatra", [(5, "08:00", "10:00"), (5, "10:00", "12:00")]),
+    ("Prof Toky", "toky", "Classe Toky", [(2, "14:00", "16:00"), (5, "14:00", "16:00")]),
+]
+
+
+def installer_classes_digital_kids(con):
+    """Une seule fois : crée les 2 animateurs de Digital Kids et leurs jours/heures de cours.
+    Leur mot de passe est vide : l'administrateur le choisit dans « Animateurs & cours »."""
+    if os.environ.get("DK_SANS_CLASSES") == "1":
+        return
+    if con.execute("SELECT 1 FROM reglages WHERE cle='classes_dk'").fetchone():
+        return
+    for nom, ident, classe, cours in CLASSES_DIGITAL_KIDS:
+        p = con.execute("SELECT id FROM profs WHERE identifiant=?", (ident,)).fetchone()
+        if p:
+            pid = p[0]
+        else:
+            pid = con.execute("INSERT INTO profs (nom, identifiant, mdp, classe, cree) VALUES (?,?,?,?,?)",
+                              (nom, ident, "", classe, maintenant())).lastrowid
+            importer_dossier(con, pid)
+        if not con.execute("SELECT 1 FROM creneaux WHERE classe_id=?", (pid,)).fetchone():
+            for jour, debut, fin in cours:
+                con.execute("INSERT INTO creneaux (classe_id, jour, debut, fin, cree) VALUES (?,?,?,?,?)", (pid, jour, debut, fin, maintenant()))
+    con.execute("INSERT INTO reglages VALUES ('classes_dk', '1')")
+    con.commit()
 
 
 # ------------------------------------------------------------------ devoirs
@@ -610,13 +639,16 @@ def animateur_connexion():
             erreur = "Identifiant ou mot de passe incorrect."
         else:
             p = db().execute("SELECT * FROM profs WHERE identifiant=?", (ident,)).fetchone()
-            if p and check_password_hash(p["mdp"], mdp):
+            if p and not p["mdp"]:
+                erreur = "Le mot de passe de cet animateur n'est pas encore choisi. L'administrateur doit le choisir dans « Animateurs & cours »."
+            elif p and check_password_hash(p["mdp"], mdp):
                 session.clear()
                 session.permanent = True
                 session["role"] = "prof"
                 session["prof_id"] = p["id"]
                 return redirect(url_for("tableau_de_bord"))
-            erreur = "Identifiant ou mot de passe incorrect."
+            else:
+                erreur = "Identifiant ou mot de passe incorrect."
     return render_template("animateur_connexion.html", premier=not hache, erreur=erreur)
 
 
@@ -750,6 +782,14 @@ def eleves():
     if request.method == "POST":
         if not est_admin():
             abort(403)
+        if request.form.get("action") == "placer":
+            cr = creneau(request.form.get("creneau", ""))
+            e = db().execute("SELECT * FROM eleves WHERE id=?", (request.form.get("eleve", ""),)).fetchone()
+            if cr and e:
+                db().execute("UPDATE eleves SET creneau_id=?, classe_id=? WHERE id=?", (cr["id"], cr["classe_id"], e["id"]))
+                db().commit()
+                flash(f"{e['prenom']} est maintenant dans le cours {cr['libelle']}.")
+            return redirect(url_for("eleves", **args_classe()))
         niveau = int(request.form.get("niveau", "1"))
         cr = creneau(request.form.get("creneau", ""))
         c = request.form.get("classe", "")
@@ -764,9 +804,11 @@ def eleves():
         if n or m:
             flash(f"{n} élève(s) ajouté(s)" + (f", {m} déjà inscrit(s) mis dans ce cours" if m else "") + ". Leurs identifiants et codes sont dans la liste.")
         return redirect(url_for("eleves", **args_classe()))
-    liste = [e for e in db().execute("SELECT * FROM eleves ORDER BY classe_id, creneau_id, prenom") if visible(e["classe_id"])]
-    noms_cr = {c["id"]: c for c in tous_creneaux()}
-    return render_template("eleves.html", eleves=liste, noms=nom_classes(), creneaux=crs, noms_cr=noms_cr)
+    liste = [e for e in db().execute("SELECT * FROM eleves ORDER BY lower(prenom)") if visible(e["classe_id"])]
+    par_cours = [{"c": c, "eleves": [e for e in liste if e["creneau_id"] == c["id"]]} for c in crs]
+    a_placer = [e for e in liste if e["creneau_id"] not in {c["id"] for c in crs}]
+    tous = tous_creneaux() if est_admin() else crs
+    return render_template("eleves.html", eleves=liste, par_cours=par_cours, a_placer=a_placer, tous_cours=tous, noms=nom_classes())
 
 
 @app.route("/animateur/eleve/<int:eid>", methods=["GET", "POST"])
