@@ -28,8 +28,8 @@ def etape(t):
 
 def api():
     import requests
-    token = None
-    if os.path.exists(FICHIER_TOKEN):
+    token = os.environ.get("API_TOKEN")  # PythonAnywhere le fournit déjà dans ses consoles
+    if not token and os.path.exists(FICHIER_TOKEN):
         token = open(FICHIER_TOKEN).read().strip()
     if not token:
         print("\nCollez votre API token (PythonAnywhere → Account → onglet « API Token » → Create/Copy),")
