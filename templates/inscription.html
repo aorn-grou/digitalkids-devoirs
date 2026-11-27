@@ -1,44 +1,63 @@
 {% extends "base.html" %}
-{% block titre %}Créer mon compte · Digital Kids{% endblock %}
+{% block titre %}Demander mon inscription · Digital Kids{% endblock %}
 {% block qui %}<a class="btn-lien" href="{{ url_for('connexion') }}">J'ai déjà un compte</a>{% endblock %}
 {% block contenu %}
-<form class="carte form-connexion" method="post" autocomplete="off" style="max-width:640px;margin:0 auto">
+<form class="carte form-connexion inscription" method="post" autocomplete="off" style="max-width:680px;margin:0 auto">
   <span class="pastille" style="justify-self:start">NOUVEL ÉLÈVE</span>
-  <h1 style="font-size:32px;color:var(--nuit)">Je crée mon compte</h1>
-  <p class="sous" style="margin:0">{{ 4 if (classes or creneaux) else 3 }} petites étapes, et tu peux faire ton devoir.</p>
+  <h1 style="font-size:32px;color:var(--nuit)">Je demande mon inscription</h1>
+  <p class="sous" style="margin:0">Remplis les 5 étapes. Ton professeur reçoit ta demande et la valide : ensuite tu pourras te connecter.</p>
   {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
 
-  <div class="etape-ins"><span class="num">1</span><label for="prenom">Mon prénom</label></div>
-  <input type="text" id="prenom" name="prenom" value="{{ v.prenom or '' }}" placeholder="ex. Rivo" required maxlength="40" spellcheck="false">
+  <div class="etape-ins"><span class="num">1</span><label for="prenom">Mon nom et mon prénom</label></div>
+  <input type="text" id="prenom" name="prenom" value="{{ v.prenom or '' }}" placeholder="ex. Rakoto Andry" required maxlength="60" pattern=".*\S\s+\S.*" title="Écris ton nom ET ton prénom, par exemple : Rakoto Andry" spellcheck="false" autocomplete="off">
 
   <div class="etape-ins"><span class="num">2</span><label for="code">Je choisis mon code secret (4 chiffres)</label></div>
-  <p class="aide" style="margin:0">Choisis 4 chiffres faciles à retenir pour toi, mais pas pour les autres. Ne le dis à personne, sauf à ton animateur.</p>
+  <p class="aide" style="margin:0">Choisis 4 chiffres faciles à retenir pour toi. Ne le dis à personne : c'est ta clé pour entrer.</p>
   <div class="deux">
     <input class="code" type="password" id="code" name="code" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="••••" required aria-label="Code secret">
     <input class="code" type="password" id="code2" name="code2" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="encore" required aria-label="Le même code encore une fois">
   </div>
 
-  {% if creneaux %}
-  <div class="etape-ins"><span class="num">3</span><label>Je choisis mon jour et mon heure de cours</label></div>
-  <div class="niveaux">
-    {% for c in creneaux %}<label class="niv"><input type="radio" name="creneau" value="{{ c.id }}" {{ 'checked' if v.creneau == c.id|string }} required>
-      <span><b>{{ c.horaire }}</b><small>{{ c.classe }} · avec {{ c.nom }}</small></span></label>{% endfor %}
+{% if creneaux %}
+  <div class="etape-ins"><span class="num">3</span><label>Ma classe : quel jour j'ai cours ?</label></div>
+  <div class="niveaux jours-choix">
+    {% for j in jours %}<label class="niv"><input type="radio" name="jour" value="{{ j }}" {{ 'checked' if v.jour == j|string }} required onchange="filtrerHeures()">
+      <span><b>{{ JOURS[j] }}</b><small>{{ creneaux|selectattr('jour', 'equalto', j)|list|length }} cours ce jour-là</small></span></label>{% endfor %}
   </div>
-  {% elif classes %}
-  <div class="etape-ins"><span class="num">3</span><label>Je choisis ma classe (mon animateur)</label></div>
-  <div class="niveaux">
-    {% for c in classes %}<label class="niv"><input type="radio" name="classe" value="{{ c.id }}" {{ 'checked' if v.classe == c.id|string }} required>
-      <span><b>{{ c.classe }}</b><small>avec {{ c.nom }}</small></span></label>{% endfor %}
+
+  <div class="etape-ins"><span class="num">4</span><label>L'heure de mon cours</label></div>
+  <p class="aide" id="choisir-jour" style="margin:0">Choisis d'abord le jour (étape 3).</p>
+  <div class="niveaux heures-choix">
+    {% for c in creneaux %}<label class="niv" data-jour="{{ c.jour }}"><input type="radio" name="creneau" value="{{ c.id }}" {{ 'checked' if v.creneau == c.id|string }} required>
+      <span><b>{{ c.debut|heure }} – {{ c.fin|heure }}</b><small>{{ JOURS[c.jour] }} · avec {{ c.nom }}</small></span></label>{% endfor %}
   </div>
+
+{% elif classes %}
+  <div class="etape-ins"><span class="num">3</span><label>Ma classe (mon professeur)</label></div>
+  <div class="niveaux">{% for c in classes %}<label class="niv"><input type="radio" name="classe" value="{{ c.id }}" {{ 'checked' if v.classe == c.id|string }} required>
+    <span><b>{{ c.classe }}</b><small>avec {{ c.nom }}</small></span></label>{% endfor %}</div>
   {% endif %}
-  <div class="etape-ins"><span class="num">{{ 4 if (classes or creneaux) else 3 }}</span><label>Je choisis mon niveau</label></div>
+  <div class="etape-ins"><span class="num">5</span><label>Mon niveau</label></div>
   <div class="niveaux">
     <label class="niv"><input type="radio" name="niveau" value="1" {{ 'checked' if v.niveau == '1' }} required>
       <span><b>Niveau 1</b><small>Clavier, souris, dossiers et Writer</small></span></label>
     <label class="niv"><input type="radio" name="niveau" value="2" {{ 'checked' if v.niveau == '2' }}>
       <span><b>Niveau 2</b><small>Logique, algorithmes et Scratch</small></span></label>
   </div>
-  <p class="aide" style="margin:0">Tu ne sais pas ? Demande à ton animateur.</p>
-  <button class="btn" type="submit">Créer mon compte ➜</button>
+  <p class="aide" style="margin:0">Tu ne sais pas ? Choisis au mieux : ton professeur pourra corriger.</p>
+  <button class="btn" type="submit">📨 Envoyer ma demande d'inscription</button>
 </form>
 {% endblock %}
+{% block scripts %}<script>
+function filtrerHeures(){
+  const j=document.querySelector('input[name=jour]:checked');
+  document.getElementById('choisir-jour').hidden=!!j;
+  document.querySelectorAll('.heures-choix .niv').forEach(l=>{
+    const ok=j&&l.dataset.jour===j.value; l.hidden=!ok;
+    if(!ok){const r=l.querySelector('input');if(r.checked)r.checked=false;}
+  });
+  const vis=[...document.querySelectorAll('.heures-choix .niv:not([hidden]) input')];
+  if(vis.length===1)vis[0].checked=true;
+}
+filtrerHeures();
+</script>{% endblock %}

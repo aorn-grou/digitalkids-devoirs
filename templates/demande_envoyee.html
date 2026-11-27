@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titre %}Demande envoyée · Digital Kids{% endblock %}
+{% block qui %}<a class="btn-lien" href="{{ url_for('connexion') }}">Connexion</a>{% endblock %}
+{% block contenu %}
+<div class="carte" style="max-width:620px;margin:0 auto;text-align:center;display:grid;gap:14px;justify-items:center">
+  {% if d.statut == 'valide' %}
+    <div style="font-size:64px">🎉</div>
+    <h1 style="font-size:32px;color:var(--vert)">Ton inscription est validée !</h1>
+    <p class="sous" style="margin:0">Tu peux maintenant te connecter avec ton nom <b>{{ d.nom }}</b> et ton code secret.</p>
+    <a class="btn" href="{{ url_for('connexion') }}">Je me connecte ➜</a>
+  {% elif d.statut == 'refuse' %}
+    <div style="font-size:64px">😕</div>
+    <h1 style="font-size:30px;color:var(--rouge)">Demande refusée</h1>
+    <p class="sous" style="margin:0">Parle à ton professeur pour savoir pourquoi.</p>
+  {% else %}
+    <div class="envoi-ic">📨</div>
+    <h1 style="font-size:32px;color:var(--nuit)">Demande envoyée !</h1>
+    <p class="sous" style="margin:0">{{ cr.nom if cr else 'Ton professeur' }} a reçu ta demande. Dès qu'il la valide, tu pourras te connecter avec ton <b>nom</b> et ton <b>code secret</b>.</p>
+    <div class="memo" style="width:100%">
+      <div>👤 <b>{{ d.nom }}</b></div>
+      {% if cr %}<div>📅 {{ cr.horaire }} · {{ cr.nom }}</div>{% endif %}
+      <div>🎓 Niveau {{ d.niveau }}</div>
+      <div>🔑 Retiens bien ton code secret !</div>
+    </div>
+    <a class="btn bleu" href="{{ url_for('demande_envoyee') }}">🔄 Voir si c'est validé</a>
+  {% endif %}
+</div>
+{% endblock %}

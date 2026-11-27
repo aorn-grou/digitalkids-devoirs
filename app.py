@@ -81,6 +81,9 @@ def init_db():
         identifiant TEXT UNIQUE NOT NULL, mdp TEXT NOT NULL, classe TEXT NOT NULL, cree TEXT);
     CREATE TABLE IF NOT EXISTS creneaux (id INTEGER PRIMARY KEY AUTOINCREMENT, classe_id INTEGER NOT NULL,
         jour INTEGER NOT NULL, debut TEXT NOT NULL, fin TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS demandes (id INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT NOT NULL, code TEXT NOT NULL,
+        niveau INTEGER NOT NULL, creneau_id INTEGER, classe_id INTEGER, cree TEXT, statut TEXT DEFAULT 'attente',
+        traite_par TEXT, traite_le TEXT, eleve_id INTEGER);
     CREATE TABLE IF NOT EXISTS seances (creneau_id INTEGER, date TEXT, saisi_par TEXT, saisi_le TEXT,
         PRIMARY KEY (creneau_id, date));
     CREATE TABLE IF NOT EXISTS presences (eleve_id INTEGER, creneau_id INTEGER, date TEXT, statut TEXT,
@@ -420,10 +423,11 @@ app.jinja_env.globals.update(semaines_du_mois=semaines_du_mois, liste_mois=liste
 
 @app.context_processor
 def contexte():
-    ctx = {"annee": datetime.now().year, "rapports_nouveaux": 0, "role": session.get("role"), "moi": None,
+    ctx = {"annee": datetime.now().year, "rapports_nouveaux": 0, "demandes_attente": 0, "role": session.get("role"), "moi": None,
            "classes": [], "classe_choisie": request.args.get("classe", "")}
     if session.get("role") in ("admin", "prof"):
         try:
+            ctx["demandes_attente"] = sum(1 for d in db().execute("SELECT classe_id FROM demandes WHERE statut='attente'") if peut_voir(d["classe_id"]))
             if est_admin():
                 ctx["moi"] = "Administrateur"
                 ctx["classes"] = toutes_classes()
@@ -486,6 +490,10 @@ def connexion():
                 return redirect(url_for("mes_devoirs"))
             if len(bons) > 1:
                 erreur = "Plusieurs élèves ont ce prénom et ce code : écris ton identifiant (par exemple rivo25)."
+            elif not bons and (dm := db().execute("SELECT * FROM demandes WHERE lower(nom)=? AND code=? AND statut!='valide' ORDER BY id DESC",
+                                                  (nom.lower(), code)).fetchone()):
+                erreur = ("⏳ Ta demande d'inscription attend la validation de ton professeur. Reviens plus tard !" if dm["statut"] == "attente"
+                          else "Ta demande d'inscription a été refusée. Parle à ton professeur.")
             else:
                 session["tentatives"] = tentatives + 1
                 erreur = "Prénom ou code incorrect. Vérifie et recommence."
@@ -494,49 +502,51 @@ def connexion():
 
 @app.route("/inscription", methods=["GET", "POST"])
 def inscription():
+    """N'importe qui peut demander son inscription ; le professeur du cours choisi la valide."""
     if not inscriptions_ouvertes():
-        return render_template("erreur.html", message="Les inscriptions sont fermées. Demande à ton animateur de créer ton compte.")
-    classes = toutes_classes()
+        return render_template("erreur.html", message="Les inscriptions sont fermées pour le moment. Demande à ton professeur.")
     crs = tous_creneaux()
+    jours = sorted({c["jour"] for c in crs})
     erreur, valeurs = None, {}
     if request.method == "POST":
-        prenom = re.sub(r"\s+", " ", request.form.get("prenom", "")).strip()[:40]
+        nom = re.sub(r"\s+", " ", request.form.get("prenom", "")).strip()[:60]
         code = request.form.get("code", "").strip()
         code2 = request.form.get("code2", "").strip()
         niveau = request.form.get("niveau", "")
+        cr = creneau(request.form.get("creneau", ""))
         classe = request.form.get("classe", "")
-        creneau = request.form.get("creneau", "")
-        cr = next((c for c in crs if str(c["id"]) == creneau), None)
-        if cr:
-            classe = str(cr["classe_id"])
-        valeurs = {"prenom": prenom, "niveau": niveau, "classe": classe, "creneau": creneau}
-        ids_classes = [str(c["id"]) for c in classes]
-        if len(prenom) < 2:
-            erreur = "Écris ton prénom."
+        classe_ok = (not crs) and (classe in [str(c["id"]) for c in toutes_classes()] or not toutes_classes())
+        valeurs = {"classe": classe, "prenom": nom, "niveau": niveau, "creneau": request.form.get("creneau", ""), "jour": request.form.get("jour", "")}
+        if len(nom) < 2:
+            erreur = "Écris ton nom et ton prénom (exemple : Rakoto Andry)."
         elif not re.fullmatch(r"\d{4}", code):
             erreur = "Ton code secret doit avoir exactement 4 chiffres."
         elif code != code2:
             erreur = "Les deux codes ne sont pas pareils. Recommence."
-        elif crs and not cr:
-            erreur = "Choisis ton jour et ton heure de cours."
-        elif classes and classe not in ids_classes:
-            erreur = "Choisis ta classe (ton animateur)."
+        elif not cr and not classe_ok:
+            erreur = "Choisis ta classe (samedi ou mercredi) et l'heure de ton cours."
         elif niveau not in ("1", "2"):
             erreur = "Choisis ton niveau."
-        elif db().execute("SELECT 1 FROM eleves WHERE lower(prenom)=? AND code=?", (prenom.lower(), code)).fetchone():
-            erreur = "Un élève a déjà ce prénom avec ce code. Choisis un autre code."
+        elif db().execute("SELECT 1 FROM demandes WHERE lower(nom)=? AND statut='attente'", (nom.lower(),)).fetchone():
+            erreur = "Une demande avec ce nom attend déjà la validation du professeur. Patiente un peu !"
+        elif db().execute("SELECT 1 FROM eleves WHERE lower(prenom)=? AND code=?", (nom.lower(), code)).fetchone():
+            erreur = "Tu es déjà inscrit avec ce nom et ce code : connecte-toi."
         else:
-            ident = nouvel_identifiant(prenom)
-            classe_id = int(classe) if classes else None
-            cur = db().execute("INSERT INTO eleves (prenom, identifiant, code, niveau, cree, classe_id, creneau_id) VALUES (?,?,?,?,?,?,?)",
-                               (prenom, ident, code, int(niveau), maintenant(), classe_id, cr["id"] if cr else None))
+            cur = db().execute("INSERT INTO demandes (nom, code, niveau, creneau_id, classe_id, cree) VALUES (?,?,?,?,?,?)",
+                               (nom, code, int(niveau), cr["id"] if cr else None,
+                                cr["classe_id"] if cr else (int(classe) if classe.isdigit() else None), maintenant()))
             db().commit()
-            session.clear()
-            session.permanent = True
-            session["eleve_id"] = cur.lastrowid
-            noter(cur.lastrowid, "inscription", f"Niveau {niveau} · identifiant {ident}")
-            return redirect(url_for("bienvenue"))
-    return render_template("inscription.html", erreur=erreur, v=valeurs, classes=classes, creneaux=crs)
+            session["demande"] = cur.lastrowid
+            return redirect(url_for("demande_envoyee"))
+    return render_template("inscription.html", erreur=erreur, v=valeurs, creneaux=crs, jours=jours, classes=toutes_classes())
+
+
+@app.route("/inscription/envoyee")
+def demande_envoyee():
+    d = db().execute("SELECT * FROM demandes WHERE id=?", (session.get("demande", 0),)).fetchone()
+    if not d:
+        return redirect(url_for("inscription"))
+    return render_template("demande_envoyee.html", d=d, cr=creneau(d["creneau_id"]))
 
 
 def eleve_courant():
@@ -831,6 +841,50 @@ def eleves():
     a_placer = [e for e in liste if e["creneau_id"] not in {c["id"] for c in crs}]
     tous = tous_creneaux() if est_admin() else crs
     return render_template("eleves.html", eleves=liste, par_cours=par_cours, a_placer=a_placer, tous_cours=tous, noms=nom_classes())
+
+
+def valider_demande(d, cr, niveau, qui):
+    """Inscrit l'élève de la demande (ou le relie à un élève déjà écrit par l'administrateur avec le même nom)."""
+    eid, nouveau = ajouter_eleve(d["nom"], niveau, cr, d["classe_id"])
+    db().execute("UPDATE eleves SET code=? WHERE id=?", (d["code"], eid))
+    db().execute("UPDATE demandes SET statut='valide', traite_par=?, traite_le=?, eleve_id=?, creneau_id=?, niveau=? WHERE id=?",
+                 (qui, maintenant(), eid, cr["id"] if cr else None, niveau, d["id"]))
+    db().execute("INSERT INTO journal (date, eleve_id, type, detail) VALUES (?,?,?,?)",
+                 (maintenant(), eid, "inscription", f"Inscription validée par {qui} · " + (cr["horaire"] if cr else "sans cours") + f" · niveau {niveau}"))
+    return eid
+
+
+@app.route("/animateur/demandes", methods=["GET", "POST"])
+@animateur_requis
+def demandes():
+    qui = "Administrateur" if est_admin() else prof_courant()["nom"]
+    if request.method == "POST":
+        action = request.form.get("action")
+        ids = request.form.getlist("demande") if action == "tout" else [request.form.get("demande", "")]
+        n = 0
+        for i in ids:
+            d = db().execute("SELECT * FROM demandes WHERE id=? AND statut='attente'", (i,)).fetchone()
+            if not d or not peut_voir(d["classe_id"]):
+                continue
+            if action == "refuser":
+                db().execute("UPDATE demandes SET statut='refuse', traite_par=?, traite_le=? WHERE id=?", (qui, maintenant(), d["id"]))
+                flash(f"Demande de {d['nom']} refusée.")
+                continue
+            cr = creneau(request.form.get(f"creneau_{d['id']}") or d["creneau_id"])
+            if not cr or not peut_voir(cr["classe_id"]):
+                cr = creneau(d["creneau_id"])
+            niv = request.form.get(f"niveau_{d['id']}", str(d["niveau"]))
+            valider_demande(d, cr, int(niv) if niv in ("1", "2") else d["niveau"], qui)
+            n += 1
+        db().commit()
+        if n:
+            flash(f"✅ {n} élève(s) inscrit(s). Ils peuvent se connecter et sont sur la fiche d'appel.")
+        return redirect(url_for("demandes", **args_classe()))
+    tout = [d for d in db().execute("SELECT * FROM demandes ORDER BY id DESC LIMIT 300") if visible(d["classe_id"])]
+    noms_cr = {c["id"]: c for c in tous_creneaux()}
+    mes_cours = [c for c in noms_cr.values() if peut_voir(c["classe_id"])]
+    return render_template("demandes.html", attente=[d for d in tout if d["statut"] == "attente"][::-1],
+                           traitees=[d for d in tout if d["statut"] != "attente"][:30], noms_cr=noms_cr, mes_cours=mes_cours)
 
 
 @app.route("/animateur/inserer", methods=["GET", "POST"])

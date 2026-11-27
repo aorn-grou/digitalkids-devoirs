@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titre %}Demandes d'inscription · Digital Kids{% endblock %}
+{% block qui %}{% include '_qui.html' %}{% endblock %}
+{% block contenu %}
+<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end">
+  <div><h1 class="titre-page">Demandes d'inscription</h1>
+  <p class="sous">Les élèves demandent leur inscription sur le site. Vérifiez le cours et le niveau, puis validez : l'élève peut se connecter et il apparaît sur la fiche d'appel.</p></div>
+  {% include '_filtre.html' %}
+</div>
+
+<form method="post" class="carte" style="margin-top:18px">
+  <input type="hidden" name="classe_filtre" value="{{ classe_choisie }}">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+    <h2 style="color:var(--nuit)">⏳ {{ attente|length }} demande(s) en attente</h2>
+    {% if attente|length > 1 %}<button class="btn petit bleu" name="action" value="tout">✅ Tout valider</button>{% endif %}
+  </div>
+  {% if not attente %}<p class="vide" style="margin-top:12px">Aucune demande en attente. 👍</p>{% endif %}
+  {% for d in attente %}
+  <div class="demande">
+    <input type="hidden" name="demande" value="{{ d.id }}">
+    <div class="demande-qui"><span class="avatar">{{ d.nom[:1]|upper }}</span>
+      <div><b>{{ d.nom }}</b><small class="aide">demande du {{ d.cree[:10]|date_fr }} à {{ d.cree[11:16] }}</small></div></div>
+    <select name="creneau_{{ d.id }}" aria-label="Cours de {{ d.nom }}">{% for c in mes_cours %}<option value="{{ c.id }}" {{ 'selected' if c.id == d.creneau_id }}>{{ c.horaire }}{{ ' · ' ~ c.nom if role == 'admin' }}</option>{% endfor %}</select>
+    <select name="niveau_{{ d.id }}" aria-label="Niveau de {{ d.nom }}"><option value="1" {{ 'selected' if d.niveau == 1 }}>Niveau 1</option><option value="2" {{ 'selected' if d.niveau == 2 }}>Niveau 2</option></select>
+    <span class="demande-btns">
+      <button class="btn petit" name="action" value="valider" onclick="this.form.querySelectorAll('input[name=demande]').forEach(i=>i.disabled=i.value!=='{{ d.id }}')">✅ Valider</button>
+      <button class="btn petit gris" name="action" value="refuser" onclick="this.form.querySelectorAll('input[name=demande]').forEach(i=>i.disabled=i.value!=='{{ d.id }}')">✕ Refuser</button>
+    </span>
+  </div>
+  {% endfor %}
+</form>
+
+{% if traitees %}
+<div class="carte" style="margin-top:18px">
+  <h2 style="color:var(--nuit)">Dernières demandes traitées</h2>
+  <div class="defile" style="margin-top:10px"><table class="tableau-notes">
+    <thead><tr><th>Élève</th><th>Cours</th><th>Niveau</th><th>Décision</th><th>Par</th><th>Le</th></tr></thead>
+    <tbody>{% for d in traitees %}<tr>
+      <td>{% if d.eleve_id %}<a href="{{ url_for('eleve_detail', eid=d.eleve_id) }}">{{ d.nom }}</a>{% else %}{{ d.nom }}{% endif %}</td>
+      <td>{{ noms_cr[d.creneau_id].horaire if d.creneau_id in noms_cr else '—' }}</td><td>{{ d.niveau }}</td>
+      <td>{% if d.statut == 'valide' %}<span class="chip vert">validée</span>{% else %}<span class="chip rouge">refusée</span>{% endif %}</td>
+      <td>{{ d.traite_par or '—' }}</td><td class="aide">{{ (d.traite_le[:10]|date_fr ~ ' à ' ~ d.traite_le[11:16]) if d.traite_le else '' }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

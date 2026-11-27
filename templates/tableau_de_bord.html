@@ -7,6 +7,13 @@
   <div><h1 class="titre-page">Tableau de bord</h1><p class="sous">Aujourd'hui {{ aujourdhui|date_fr }} · chiffres du mois de {{ mois|mois_libelle }}.</p></div>
   {% include '_filtre.html' %}
 </div>
+{% if demandes_attente %}
+<a class="hero-action bleu" href="{{ url_for('demandes', **({'classe': classe_choisie} if classe_choisie else {})) }}">
+  <span class="hero-ic">📨</span>
+  <span class="hero-txt"><b>{{ demandes_attente }} demande(s) d'inscription à valider</b><small>Des élèves se sont inscrits sur le site : vérifiez et validez-les</small></span>
+  <span class="hero-fleche">→</span>
+</a>
+{% endif %}
 {% if role == 'admin' %}
 <a class="hero-action" href="{{ url_for('inserer') }}">
   <span class="hero-ic">➕</span>

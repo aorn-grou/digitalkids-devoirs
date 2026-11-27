@@ -91,20 +91,42 @@ c.post(f"/animateur/eleve/{lid}", data={"action": "reset", "devoir": "n1-devoir-
 ok(con.execute("SELECT COUNT(*) FROM reponses WHERE eleve_id=?", (lid,)).fetchone()[0] == 0, "remise à zéro d'un devoir pour un élève")
 r = A.app.test_client().post("/connexion", data={"identifiant": "rivo00", "code": "0000"})
 ok("incorrect" in r.get_data(as_text=True), "mauvais code refusé")
-# ---- inscription par l'élève, connexion par prénom, rapport
+# ---- inscription par l'élève (demande → validation par le professeur), connexion par prénom, rapport
+def inscrire(data, valider=True):
+    cl = A.app.test_client()
+    r = cl.post("/inscription", data=data)
+    assert r.status_code == 302 and "/inscription/envoyee" in r.headers["Location"], r.get_data(as_text=True)[-2000:]
+    if valider:
+        dm = con.execute("SELECT id FROM demandes ORDER BY id DESC LIMIT 1").fetchone()[0]
+        c.post("/animateur/demandes", data={"action": "valider", "demande": str(dm)})
+        r = cl.post("/connexion", data={"identifiant": data["prenom"], "code": data["code"]})
+        assert r.status_code == 302, "connexion après validation"
+    return cl
 el = A.app.test_client()
 ok(el.get("/inscription").status_code == 200, "page d'inscription")
 r = el.post("/inscription", data={"prenom": "Tojo", "code": "1234", "code2": "1235", "niveau": "2"})
 ok("pas pareils" in r.get_data(as_text=True), "codes différents refusés")
 r = el.post("/inscription", data={"prenom": "Tojo", "code": "1234", "code2": "1234", "niveau": "2"})
-ok(r.status_code == 302 and "/bienvenue" in r.headers["Location"], "Tojo crée son compte niveau 2")
-ok("Bienvenue Tojo" in el.get("/bienvenue").get_data(as_text=True), "page de bienvenue")
+ok(r.status_code == 302 and "/inscription/envoyee" in r.headers["Location"], "Tojo envoie sa demande d'inscription (niveau 2)")
+ok("Demande envoyée" in el.get("/inscription/envoyee").get_data(as_text=True), "page « demande envoyée »")
+ok(con.execute("SELECT COUNT(*) FROM eleves WHERE prenom='Tojo'").fetchone()[0] == 0, "pas encore élève tant que le professeur n'a pas validé")
+r = el.post("/connexion", data={"identifiant": "Tojo", "code": "1234"})
+ok("attend la validation" in r.get_data(as_text=True), "connexion refusée avant validation, avec un message clair")
+ok("Tojo" in c.get("/animateur/demandes").get_data(as_text=True) and "1 demande(s) d'inscription" in c.get("/animateur/accueil").get_data(as_text=True), "la demande apparaît chez le professeur (+ tableau de bord)")
+dm = con.execute("SELECT id FROM demandes WHERE nom='Tojo'").fetchone()[0]
+c.post("/animateur/demandes", data={"action": "valider", "demande": str(dm)})
+ok(con.execute("SELECT code, niveau FROM eleves WHERE prenom='Tojo'").fetchone() is not None and "validée" in el.get("/inscription/envoyee").get_data(as_text=True), "le professeur valide : Tojo est inscrit")
+r = el.post("/connexion", data={"identifiant": "Tojo", "code": "1234"}); ok(r.status_code == 302, "Tojo se connecte après validation")
 ok("n2-devoir-1" in el.get("/mes-devoirs").get_data(as_text=True), "Tojo voit le devoir niveau 2")
 el.post("/api/valider", json={"devoir": "n2-devoir-1", "ex": "e3", "reponse": {"4": "Pair", "9": "Impair", "12": "Pair", "15": "Impair", "22": "Pair", "7": "Impair"}})
 el2 = A.app.test_client()
 r = el2.post("/connexion", data={"identifiant": "tojo", "code": "1234"}); ok(r.status_code == 302, "Tojo se reconnecte avec son prénom (minuscules) et son code")
 r = A.app.test_client().post("/inscription", data={"prenom": "Tojo", "code": "1234", "code2": "1234", "niveau": "1"})
-ok("déjà ce prénom" in r.get_data(as_text=True), "même prénom + même code refusé")
+ok("déjà inscrit" in r.get_data(as_text=True), "même nom + même code refusé")
+r = A.app.test_client().post("/inscription", data={"prenom": "Refus Test", "code": "9999", "code2": "9999", "niveau": "1"})
+dm = con.execute("SELECT id FROM demandes WHERE nom='Refus Test'").fetchone()[0]
+c.post("/animateur/demandes", data={"action": "refuser", "demande": str(dm)})
+ok("refusée" in A.app.test_client().post("/connexion", data={"identifiant": "Refus Test", "code": "9999"}).get_data(as_text=True), "demande refusée : message clair à la connexion")
 rap = c.get("/animateur/rapports").get_data(as_text=True)
 ok("Tojo" in rap and "a créé son compte" in rap and "1234" in rap and "s'est connecté" in rap and "Pair ou impair ? : 20.0/20" in rap, "le rapport montre inscription, code, connexion et note")
 ok(re.search(r"\d{2}:\d{2}:\d{2}", rap) is not None, "le rapport donne l'heure exacte")
@@ -136,9 +158,8 @@ ok(pa.get("/animateur/profs").status_code == 403, "un animateur ne voit pas la p
 ins = A.app.test_client().get("/inscription").get_data(as_text=True)
 ok("Classe A" in ins and "Classe B" in ins, "l'élève choisit sa classe à l'inscription")
 ok("ta classe" in A.app.test_client().post("/inscription", data={"prenom": "Sans", "code": "1111", "code2": "1111", "niveau": "1"}).get_data(as_text=True), "classe obligatoire quand il y a des classes")
-ea, eb = A.app.test_client(), A.app.test_client()
-ea.post("/inscription", data={"prenom": "Mamy", "code": "2222", "code2": "2222", "niveau": "1", "classe": str(ia)})
-eb.post("/inscription", data={"prenom": "Soa", "code": "3333", "code2": "3333", "niveau": "1", "classe": str(ib)})
+ea = inscrire({"prenom": "Mamy", "code": "2222", "code2": "2222", "niveau": "1", "classe": str(ia)})
+eb = inscrire({"prenom": "Soa", "code": "3333", "code2": "3333", "niveau": "1", "classe": str(ib)})
 ok("Classe A" in ea.get("/bienvenue").get_data(as_text=True), "bienvenue indique la classe")
 ok(f"c{ia}-n1-devoir-1" in ea.get("/mes-devoirs").get_data(as_text=True) and f"c{ib}-n1-devoir-1" not in ea.get("/mes-devoirs").get_data(as_text=True), "Mamy voit le devoir de SA classe seulement")
 ok(ea.get(f"/devoir/c{ib}-n1-devoir-1").status_code == 404 and ea.get("/devoir/n1-devoir-1").status_code == 404, "Mamy ne peut pas ouvrir le devoir de l'autre classe")
@@ -256,8 +277,12 @@ tb = c.get("/animateur/accueil").get_data(as_text=True)
 ok("Tableau de bord" in tb and "Classe A" in tb and "Classe B" in tb and "présence ce mois" in tb, "tableau de bord administrateur")
 ok("Classe B" not in pa.get("/animateur/accueil").get_data(as_text=True), "le tableau de bord de Mr Hery ne montre que sa classe")
 ins = A.app.test_client().get("/inscription").get_data(as_text=True)
-ok("Samedi 8h-10h" in ins and "Mercredi 14h-16h" in ins, "à l'inscription l'élève choisit son jour et son heure")
-ni = A.app.test_client(); ni.post("/inscription", data={"prenom": "Zo", "code": "4444", "code2": "4444", "niveau": "2", "creneau": str(s10)})
+ok("Samedi" in ins and "Mercredi" in ins and "8h – 10h" in ins and "14h – 16h" in ins, "à l'inscription l'élève choisit sa classe (samedi/mercredi) puis son heure")
+ni = inscrire({"prenom": "Zo", "code": "4444", "code2": "4444", "niveau": "2", "jour": "5", "creneau": str(s10)}, valider=False)
+ok("Zo" in pb.get("/animateur/demandes").get_data(as_text=True) and "Zo" not in pa.get("/animateur/demandes").get_data(as_text=True), "la demande de Zo (samedi 10h) va chez Mme Lova seulement")
+dz = con.execute("SELECT id FROM demandes WHERE nom='Zo'").fetchone()[0]
+ok(pa.post("/animateur/demandes", data={"action": "valider", "demande": str(dz)}) and con.execute("SELECT COUNT(*) FROM eleves WHERE prenom='Zo'").fetchone()[0] == 0, "Mr Hery ne peut pas valider une demande d'une autre classe")
+pb.post("/animateur/demandes", data={"action": "valider", "demande": str(dz), f"niveau_{dz}": "2"})
 ok(tuple(con.execute("SELECT classe_id, creneau_id FROM eleves WHERE prenom='Zo'").fetchone()) == (ib, s10), "Zo s'inscrit samedi 10h → classe de Mme Lova")
 for p in ["/animateur/presence", "/animateur/presences", "/animateur/excel", "/animateur/accueil", f"/animateur/eleve/{ids['Mamy']}", "/animateur/eleves", "/animateur/profs"]:
     ok(c.get(p).status_code == 200, "page admin " + p)
@@ -310,4 +335,8 @@ ap, r = importer(b, "k.xlsx", {"importer_0": "1", "col_nom_0": "0", "cours_0": s
 ok(E("Kanto")["creneau_id"] == s14 and E("Kanto")["niveau"] == 2, "l'admin peut choisir lui-même le cours et le niveau dans l'aperçu")
 r = c.post("/animateur/excel/importer", data={"fichier": (_io.BytesIO(b"x"), "vieux.xls")}, content_type="multipart/form-data", follow_redirects=True).get_data(as_text=True)
 ok("ancien Excel" in r, "un vieux .xls est expliqué (enregistrer en .xlsx)")
+# ---- l'admin avait déjà écrit le nom ; l'élève s'inscrit lui-même → pas de doublon
+c.post("/animateur/inserer", data={"creneau": str(mer), "niveau": "1", "prenoms": "Rasoa Hery"})
+cl = inscrire({"prenom": "Rasoa Hery", "code": "5678", "code2": "5678", "niveau": "1", "jour": "2", "creneau": str(mer)})
+ok(con.execute("SELECT COUNT(*) FROM eleves WHERE prenom='Rasoa Hery'").fetchone()[0] == 1 and con.execute("SELECT code FROM eleves WHERE prenom='Rasoa Hery'").fetchone()[0] == "5678", "élève déjà écrit par l'admin : la demande le relie (pas de doublon), avec son code")
 print("\nTOUS LES TESTS SONT PASSÉS")
