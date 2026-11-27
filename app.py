@@ -98,6 +98,8 @@ def init_db():
         con.execute("ALTER TABLE creneaux ADD COLUMN cree TEXT")
     if "creneau_id" not in colonnes(con, "eleves"):
         con.execute("ALTER TABLE eleves ADD COLUMN creneau_id INTEGER")
+    if "oubli" not in colonnes(con, "profs"):
+        con.execute("ALTER TABLE profs ADD COLUMN oubli TEXT")
     if "lu_admin" not in colonnes(con, "journal"):
         con.execute("ALTER TABLE journal ADD COLUMN lu_admin INTEGER DEFAULT 0")
     con.commit()
@@ -684,6 +686,26 @@ def animateur_connexion():
     return render_template("animateur_connexion.html", premier=not hache, erreur=erreur)
 
 
+@app.route("/animateur/oubli", methods=["GET", "POST"])
+def mot_de_passe_oublie():
+    """Mot de passe (ou identifiant) oublié : chacun choisit son nom.
+    Animateur → demande envoyée à l'administrateur. Administrateur → réparation par la console PythonAnywhere."""
+    profs_ = toutes_classes()
+    choisi, envoye = None, False
+    qui = request.values.get("qui", "")
+    if qui == "admin":
+        choisi = {"nom": "Administrateur", "identifiant": ADMIN, "admin": True}
+    else:
+        p = next((x for x in profs_ if str(x["id"]) == qui), None)
+        if p:
+            choisi = {"nom": p["nom"], "identifiant": p["identifiant"], "admin": False}
+            if request.method == "POST":
+                db().execute("UPDATE profs SET oubli=? WHERE id=?", (maintenant(), p["id"]))
+                db().commit()
+                envoye = True
+    return render_template("oubli.html", profs=profs_, choisi=choisi, envoye=envoye)
+
+
 # ------------------------------------------------------------------ tableau des notes
 @app.route("/animateur/tableau")
 @animateur_requis
@@ -739,9 +761,9 @@ def profs():
             if len(mdp) < 6:
                 flash("Le mot de passe doit avoir au moins 6 caractères.")
             else:
-                db().execute("UPDATE profs SET mdp=? WHERE id=?", (generate_password_hash(mdp), request.form["prof"]))
+                db().execute("UPDATE profs SET mdp=?, oubli=NULL WHERE id=?", (generate_password_hash(mdp), request.form["prof"]))
                 db().commit()
-                flash("Mot de passe de l'animateur changé.")
+                flash("Mot de passe de l'animateur changé. Donnez-lui son identifiant et ce mot de passe.")
         elif action == "creneau":
             jour, debut, fin = request.form.get("jour", ""), request.form.get("debut", ""), request.form.get("fin", "")
             pid = request.form.get("prof", "")
@@ -1201,7 +1223,8 @@ def tableau_de_bord():
     recents = [l for l in db().execute("""SELECT j.*, e.prenom FROM journal j LEFT JOIN eleves e ON e.id = j.eleve_id
                                           ORDER BY j.id DESC LIMIT 300""") if l["eleve_id"] in ids][:6]
     sans_cours = sum(1 for e in eleves_ if not e["creneau_id"])
-    return render_template("tableau_de_bord.html", mois=mois, nb_eleves=len(eleves_), taux_mois=taux(tp, ta), du_jour=du_jour,
+    oublis = db().execute("SELECT * FROM profs WHERE oubli IS NOT NULL").fetchall() if est_admin() else []
+    return render_template("tableau_de_bord.html", oublis=oublis, mois=mois, nb_eleves=len(eleves_), taux_mois=taux(tp, ta), du_jour=du_jour,
                            absents=absents[:10], en_retard=en_retard, stats_classes=classes, finis=finis, moyenne_mois=moyenne(notes),
                            recents=recents, sans_cours=sans_cours, nb_cours=len(crs), aujourdhui=auj)
 

@@ -697,3 +697,23 @@ button,.btn,a{touch-action:manipulation}
 .demande-btns{display:flex;gap:6px}
 .envoi-ic{font-size:64px;animation:sautille 2s ease-in-out infinite}
 .jours-choix .niv b{font-size:24px}
+
+/* ---- mot de passe oublié ---- */
+.oubli{display:grid;gap:14px}
+.oubli-choix{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.oubli-carte{display:flex;align-items:center;gap:12px;padding:14px;border-radius:var(--r);border:1.5px solid var(--bord-fort);background:#fff;text-decoration:none;color:var(--nuit);transition:all var(--vite)}
+.oubli-carte:hover{border-color:var(--bleu-400);transform:translateY(-2px);box-shadow:var(--o-2);color:var(--nuit)}
+.oubli-carte b{display:block;font:800 18px var(--titre)}
+.oubli-carte small{color:var(--gris);font-weight:600}
+.avatar.admin{background:linear-gradient(135deg,var(--bleu-400),var(--bleu));color:#fff}
+.ident-box{display:grid;justify-items:center;gap:2px;padding:18px;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--bleu-50),var(--bleu-100));border:1px solid var(--bleu-100)}
+.ident-box small{font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:1px;font-size:12px}
+.ident-box b{font:800 34px var(--titre);color:var(--bleu);letter-spacing:1px}
+.oubli-etapes{margin:0;padding-left:22px;display:grid;gap:10px}
+.commande{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;padding:10px;border-radius:var(--r-sm);background:var(--nuit-900)}
+.commande code{background:none;border:0;color:#E2E8F0;font-size:13px;word-break:break-all;flex:1}
+.lien-oubli{justify-self:center;font-weight:700;font-size:14px;text-decoration:none}
+.lien-oubli.fort{padding:8px 14px;border-radius:999px;background:var(--orange-100);color:#B45309;animation:pop .4s var(--doux)}
+.alerte-oubli{display:flex;align-items:center;gap:12px;margin-top:14px;padding:14px 18px;border-radius:var(--r-lg);background:var(--rouge-100);border:1px solid #FBC8C1;color:#8E1D12;text-decoration:none;font-size:15px;animation:apparait .5s var(--doux) both}
+.alerte-oubli span:first-of-type{flex:1}
+.alerte-oubli:hover{color:#8E1D12;box-shadow:var(--o-2)}

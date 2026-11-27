@@ -19,5 +19,6 @@
   <input type="password" id="mot_de_passe" name="mot_de_passe" required>
   {% if premier %}<label for="confirmation">Écrivez-le une 2e fois</label><input type="password" id="confirmation" name="confirmation" required>{% endif %}
   <button class="btn bleu" type="submit">{{ 'Créer et entrer' if premier else 'Entrer' }} ➜</button>
+  {% if not premier %}<a class="lien-oubli{{ ' fort' if erreur }}" href="{{ url_for('mot_de_passe_oublie') }}">🔑 Identifiant ou mot de passe oublié ?</a>{% endif %}
 </form>
 {% endblock %}

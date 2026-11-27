@@ -14,6 +14,9 @@
   <span class="hero-fleche">→</span>
 </a>
 {% endif %}
+{% for p in oublis %}
+<a class="alerte-oubli" href="{{ url_for('profs') }}">🔑 <span><b>{{ p.nom }}</b> a oublié son mot de passe (identifiant <b>{{ p.identifiant }}</b>). Cliquez ici, puis donnez-lui un nouveau mot de passe sur sa ligne.</span><span class="hero-fleche" style="font-size:22px">→</span></a>
+{% endfor %}
 {% if role == 'admin' %}
 <a class="hero-action" href="{{ url_for('inserer') }}">
   <span class="hero-ic">➕</span>
