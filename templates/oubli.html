@@ -2,39 +2,18 @@
 {% block titre %}Mot de passe oublié · Digital Kids{% endblock %}
 {% block qui %}<a class="btn-lien" href="{{ url_for('animateur_connexion') }}">← Connexion</a>{% endblock %}
 {% block contenu %}
-<div class="carte oubli" style="max-width:640px;margin:0 auto">
+<form class="carte form-connexion" method="post" style="max-width:460px;margin:0 auto" autocomplete="off">
   <span class="pastille" style="justify-self:start">MOT DE PASSE OUBLIÉ</span>
-  {% if not choisi %}
-    <h1 style="font-size:30px;color:var(--nuit)">Qui êtes-vous ?</h1>
-    <p class="sous" style="margin:0">Touchez votre nom : le logiciel vous montre votre identifiant et comment retrouver l'accès.</p>
-    <div class="oubli-choix">
-      {% for p in profs %}<a class="oubli-carte" href="{{ url_for('mot_de_passe_oublie', qui=p.id) }}"><span class="avatar">{{ p.nom.split()[-1][:1]|upper }}</span><span><b>{{ p.nom }}</b><small>{{ p.classe }}</small></span></a>{% endfor %}
-      <a class="oubli-carte" href="{{ url_for('mot_de_passe_oublie', qui='admin') }}"><span class="avatar admin">A</span><span><b>Administrateur</b><small>accès à tout</small></span></a>
-    </div>
-  {% else %}
-    <h1 style="font-size:30px;color:var(--nuit)">{{ choisi.nom }}</h1>
-    <div class="ident-box"><small>Votre identifiant</small><b>{{ choisi.identifiant }}</b></div>
-    {% if choisi.admin %}
-      <p style="margin:0"><b>Pour choisir un nouveau mot de passe administrateur</b> (seul le propriétaire du site peut le faire) :</p>
-      <ol class="oubli-etapes">
-        <li>Ouvrez <b>pythonanywhere.com</b> → <b>Consoles</b> → cliquez sur votre <b>Bash console</b>.</li>
-        <li>Collez cette commande, puis appuyez sur <b>Entrée</b> :
-          <div class="commande"><code id="cmd">python3.10 digitalkids-devoirs/outils/mot_de_passe.py</code><button type="button" class="btn petit bleu" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('cmd').textContent).then(()=>{this.textContent='✓ Copié'})">Copier</button></div></li>
-        <li>Choisissez <b>1</b> (Administrateur), écrivez le nouveau mot de passe 2 fois. Rien ne s'affiche quand vous tapez : c'est normal.</li>
-        <li>Revenez ici et connectez-vous avec <b>admin</b> et le nouveau mot de passe.</li>
-      </ol>
-      <p class="aide" style="margin:0">La même commande permet aussi de réparer le mot de passe d'un animateur.</p>
-    {% elif envoye %}
-      <div class="flash" style="animation:none">Demande envoyée à l'administrateur. Il va vous donner un nouveau mot de passe. Ensuite, connectez-vous avec l'identifiant <b>{{ choisi.identifiant }}</b>.</div>
-    {% else %}
-      <p style="margin:0">Vous avez oublié votre <b>mot de passe</b> ? L'administrateur peut vous en donner un nouveau en une minute.</p>
-      <form method="post"><input type="hidden" name="qui" value="{{ request.values.get('qui') }}">
-        <button class="btn" style="width:100%">📩 Demander un nouveau mot de passe à l'administrateur</button></form>
-    {% endif %}
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
-      <a class="btn petit gris" href="{{ url_for('animateur_connexion') }}">← Retour à la connexion</a>
-      <a class="btn petit gris" href="{{ url_for('mot_de_passe_oublie') }}">Ce n'est pas moi</a>
-    </div>
-  {% endif %}
-</div>
+  <h1 style="font-size:28px;color:var(--nuit)">Nouveau mot de passe</h1>
+  {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
+  <label for="identifiant">Identifiant</label>
+  <input type="text" id="identifiant" name="identifiant" required autocapitalize="none" spellcheck="false" placeholder="ex. toky">
+  <label for="secours">Code de secours</label>
+  <input type="password" id="secours" name="secours" required>
+  <label for="mot_de_passe">Nouveau mot de passe</label>
+  <input type="password" id="mot_de_passe" name="mot_de_passe" required minlength="6">
+  <label for="confirmation">Écrivez-le une 2e fois</label>
+  <input type="password" id="confirmation" name="confirmation" required minlength="6">
+  <button class="btn bleu" type="submit">Changer mon mot de passe ➜</button>
+</form>
 {% endblock %}

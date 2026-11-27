@@ -714,6 +714,6 @@ button,.btn,a{touch-action:manipulation}
 .commande code{background:none;border:0;color:#E2E8F0;font-size:13px;word-break:break-all;flex:1}
 .lien-oubli{justify-self:center;font-weight:700;font-size:14px;text-decoration:none}
 .lien-oubli.fort{padding:8px 14px;border-radius:999px;background:var(--orange-100);color:#B45309;animation:pop .4s var(--doux)}
-.alerte-oubli{display:flex;align-items:center;gap:12px;margin-top:14px;padding:14px 18px;border-radius:var(--r-lg);background:var(--rouge-100);border:1px solid #FBC8C1;color:#8E1D12;text-decoration:none;font-size:15px;animation:apparait .5s var(--doux) both}
+.alerte-oubli{display:flex;align-items:center;gap:12px;margin-top:14px;padding:14px 18px;border-radius:var(--r-lg);background:var(--jaune-100);border:1px solid #F6D774;color:#7A5300;text-decoration:none;font-size:15px;animation:apparait .5s var(--doux) both}
 .alerte-oubli span:first-of-type{flex:1}
-.alerte-oubli:hover{color:#8E1D12;box-shadow:var(--o-2)}
+.alerte-oubli:hover{color:#7A5300;box-shadow:var(--o-2)}

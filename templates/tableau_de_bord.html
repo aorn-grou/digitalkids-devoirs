@@ -14,9 +14,7 @@
   <span class="hero-fleche">→</span>
 </a>
 {% endif %}
-{% for p in oublis %}
-<a class="alerte-oubli" href="{{ url_for('profs') }}">🔑 <span><b>{{ p.nom }}</b> a oublié son mot de passe (identifiant <b>{{ p.identifiant }}</b>). Cliquez ici, puis donnez-lui un nouveau mot de passe sur sa ligne.</span><span class="hero-fleche" style="font-size:22px">→</span></a>
-{% endfor %}
+{% if not a_secours %}<a class="alerte-oubli" href="{{ url_for('mot_de_passe') }}#secours">🔑 <span>Choisissez votre <b>code de secours</b> : il permet de changer le mot de passe si vous l'oubliez.</span><span class="hero-fleche" style="font-size:22px">→</span></a>{% endif %}
 {% if role == 'admin' %}
 <a class="hero-action" href="{{ url_for('inserer') }}">
   <span class="hero-ic">➕</span>

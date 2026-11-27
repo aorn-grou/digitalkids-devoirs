@@ -100,6 +100,8 @@ def init_db():
         con.execute("ALTER TABLE eleves ADD COLUMN creneau_id INTEGER")
     if "oubli" not in colonnes(con, "profs"):
         con.execute("ALTER TABLE profs ADD COLUMN oubli TEXT")
+    if "secours" not in colonnes(con, "profs"):
+        con.execute("ALTER TABLE profs ADD COLUMN secours TEXT")
     if "lu_admin" not in colonnes(con, "journal"):
         con.execute("ALTER TABLE journal ADD COLUMN lu_admin INTEGER DEFAULT 0")
     con.commit()
@@ -288,6 +290,13 @@ def prof_courant():
     if session.get("role") != "prof":
         return None
     return db().execute("SELECT * FROM profs WHERE id=?", (session.get("prof_id"),)).fetchone()
+
+
+def a_code_secours():
+    if est_admin():
+        return bool(reglage("code_secours"))
+    p = prof_courant()
+    return bool(p and p["secours"])
 
 
 def toutes_classes():
@@ -688,22 +697,36 @@ def animateur_connexion():
 
 @app.route("/animateur/oubli", methods=["GET", "POST"])
 def mot_de_passe_oublie():
-    """Mot de passe (ou identifiant) oublié : chacun choisit son nom.
-    Animateur → demande envoyée à l'administrateur. Administrateur → réparation par la console PythonAnywhere."""
-    profs_ = toutes_classes()
-    choisi, envoye = None, False
-    qui = request.values.get("qui", "")
-    if qui == "admin":
-        choisi = {"nom": "Administrateur", "identifiant": ADMIN, "admin": True}
-    else:
-        p = next((x for x in profs_ if str(x["id"]) == qui), None)
-        if p:
-            choisi = {"nom": p["nom"], "identifiant": p["identifiant"], "admin": False}
-            if request.method == "POST":
-                db().execute("UPDATE profs SET oubli=? WHERE id=?", (maintenant(), p["id"]))
+    """Mot de passe oublié : identifiant + code de secours + nouveau mot de passe."""
+    erreur = None
+    if request.method == "POST":
+        ident = request.form.get("identifiant", "").strip().lower()
+        code = request.form.get("secours", "").strip()
+        mdp = request.form.get("mot_de_passe", "")
+        essais = session.get("essais_secours", 0)
+        if essais >= 5:
+            erreur = "Trop d'essais. Réessayez plus tard."
+        elif len(mdp) < 6 or mdp != request.form.get("confirmation", ""):
+            erreur = "Le nouveau mot de passe doit avoir au moins 6 caractères, écrit 2 fois pareil."
+        else:
+            if ident == ADMIN:
+                h = reglage("code_secours")
+            else:
+                p = db().execute("SELECT * FROM profs WHERE identifiant=?", (ident,)).fetchone()
+                h = p["secours"] if p else None
+            if h and check_password_hash(h, code.lower()):
+                nouveau = generate_password_hash(mdp)
+                if ident == ADMIN:
+                    db().execute("INSERT OR REPLACE INTO reglages VALUES ('mot_de_passe', ?)", (nouveau,))
+                else:
+                    db().execute("UPDATE profs SET mdp=? WHERE identifiant=?", (nouveau, ident))
                 db().commit()
-                envoye = True
-    return render_template("oubli.html", profs=profs_, choisi=choisi, envoye=envoye)
+                session.pop("essais_secours", None)
+                flash("✅ Mot de passe changé. Connectez-vous avec votre nouveau mot de passe.")
+                return redirect(url_for("animateur_connexion"))
+            session["essais_secours"] = essais + 1
+            erreur = "Identifiant ou code de secours incorrect."
+    return render_template("oubli.html", erreur=erreur)
 
 
 # ------------------------------------------------------------------ tableau des notes
@@ -1138,6 +1161,19 @@ def notes_csv():
 @app.route("/animateur/mot-de-passe", methods=["GET", "POST"])
 @animateur_requis
 def mot_de_passe():
+    if request.method == "POST" and request.form.get("action") == "secours":
+        code = request.form.get("secours", "").strip()
+        if len(code) < 4:
+            flash("Le code de secours doit avoir au moins 4 caractères.")
+        else:
+            h = generate_password_hash(code.lower())
+            if est_admin():
+                db().execute("INSERT OR REPLACE INTO reglages VALUES ('code_secours', ?)", (h,))
+            else:
+                db().execute("UPDATE profs SET secours=? WHERE id=?", (h, session["prof_id"]))
+            db().commit()
+            flash("✅ Code de secours enregistré. Notez-le bien : il sert si vous oubliez votre mot de passe.")
+        return redirect(url_for("mot_de_passe"))
     if request.method == "POST":
         mdp = request.form.get("mot_de_passe", "")
         if len(mdp) < 6 or mdp != request.form.get("confirmation", ""):
@@ -1150,7 +1186,7 @@ def mot_de_passe():
             db().commit()
             flash("Mot de passe changé.")
             return redirect(url_for("tableau"))
-    return render_template("mot_de_passe.html")
+    return render_template("mot_de_passe.html", a_secours=a_code_secours())
 
 
 @app.route("/animateur/deconnexion")
@@ -1223,8 +1259,7 @@ def tableau_de_bord():
     recents = [l for l in db().execute("""SELECT j.*, e.prenom FROM journal j LEFT JOIN eleves e ON e.id = j.eleve_id
                                           ORDER BY j.id DESC LIMIT 300""") if l["eleve_id"] in ids][:6]
     sans_cours = sum(1 for e in eleves_ if not e["creneau_id"])
-    oublis = db().execute("SELECT * FROM profs WHERE oubli IS NOT NULL").fetchall() if est_admin() else []
-    return render_template("tableau_de_bord.html", oublis=oublis, mois=mois, nb_eleves=len(eleves_), taux_mois=taux(tp, ta), du_jour=du_jour,
+    return render_template("tableau_de_bord.html", a_secours=a_code_secours(), mois=mois, nb_eleves=len(eleves_), taux_mois=taux(tp, ta), du_jour=du_jour,
                            absents=absents[:10], en_retard=en_retard, stats_classes=classes, finis=finis, moyenne_mois=moyenne(notes),
                            recents=recents, sans_cours=sans_cours, nb_cours=len(crs), aujourdhui=auj)
 
