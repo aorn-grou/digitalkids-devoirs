@@ -717,3 +717,5 @@ button,.btn,a{touch-action:manipulation}
 .alerte-oubli{display:flex;align-items:center;gap:12px;margin-top:14px;padding:14px 18px;border-radius:var(--r-lg);background:var(--jaune-100);border:1px solid #F6D774;color:#7A5300;text-decoration:none;font-size:15px;animation:apparait .5s var(--doux) both}
 .alerte-oubli span:first-of-type{flex:1}
 .alerte-oubli:hover{color:#7A5300;box-shadow:var(--o-2)}
+.champ{display:grid;gap:4px}
+.champ small{font-weight:700;color:var(--gris);font-size:13px}

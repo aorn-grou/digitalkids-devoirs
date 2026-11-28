@@ -520,15 +520,20 @@ def inscription():
     jours = sorted({c["jour"] for c in crs})
     erreur, valeurs = None, {}
     if request.method == "POST":
-        nom = re.sub(r"\s+", " ", request.form.get("prenom", "")).strip()[:60]
+        nom_famille = re.sub(r"\s+", " ", request.form.get("nom", "")).strip()
+        nom = re.sub(r"\s+", " ", (nom_famille + " " + request.form.get("prenom", "")).strip()).strip()[:60]
         code = request.form.get("code", "").strip()
         code2 = request.form.get("code2", "").strip()
         niveau = request.form.get("niveau", "")
         cr = creneau(request.form.get("creneau", ""))
         classe = request.form.get("classe", "")
         classe_ok = (not crs) and (classe in [str(c["id"]) for c in toutes_classes()] or not toutes_classes())
-        valeurs = {"classe": classe, "prenom": nom, "niveau": niveau, "creneau": request.form.get("creneau", ""), "jour": request.form.get("jour", "")}
-        if len(nom) < 2:
+        valeurs = {"classe": classe, "prenom": request.form.get("prenom", "").strip(), "nom": nom_famille, "niveau": niveau, "creneau": request.form.get("creneau", ""), "jour": request.form.get("jour", "")}
+        if "nom" in request.form and len(nom_famille) < 2:
+            erreur = "Écris ton nom de famille (case « Nom », exemple : Rakoto)."
+        elif "nom" in request.form and len(request.form.get("prenom", "").strip()) < 2:
+            erreur = "Écris ton prénom (case « Prénom », exemple : Andry)."
+        elif len(nom) < 2:
             erreur = "Écris ton nom et ton prénom (exemple : Rakoto Andry)."
         elif not re.fullmatch(r"\d{4}", code):
             erreur = "Ton code secret doit avoir exactement 4 chiffres."

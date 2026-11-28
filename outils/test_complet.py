@@ -352,4 +352,12 @@ c.post("/animateur/mot-de-passe", data={"action": "secours", "secours": "1234abc
 A.app.test_client().post("/animateur/oubli", data={"identifiant": "admin", "secours": "1234abcd", "mot_de_passe": "adminNEW1", "confirmation": "adminNEW1"})
 ok(A.app.test_client().post("/animateur", data={"identifiant": "admin", "mot_de_passe": "adminNEW1"}).status_code == 302, "l'administrateur aussi peut changer son mot de passe avec son code de secours")
 ok("incorrect" in A.app.test_client().post("/animateur/oubli", data={"identifiant": "mmelova", "secours": "x", "mot_de_passe": "nouveau9", "confirmation": "nouveau9"}).get_data(as_text=True), "sans code de secours enregistré : impossible")
+# ---- inscription : cases Nom + Prénom, plus de blocage silencieux du navigateur
+pi = A.app.test_client().get("/inscription").get_data(as_text=True)
+ok("novalidate" in pi and 'name="nom"' in pi and 'name="prenom"' in pi and 'pattern=".*' not in pi, "formulaire : cases Nom et Prénom, jamais bloqué en silence")
+r = A.app.test_client().post("/inscription", data={"nom": "", "prenom": "Cedrick", "code": "1234", "code2": "1234", "niveau": "1", "jour": "5", "creneau": str(s14)}).get_data(as_text=True)
+ok("nom de famille" in r and 'id="erreur"' in r and 'value="Cedrick"' in r, "nom oublié : grand message rouge, le prénom reste écrit")
+cli = A.app.test_client()
+r = cli.post("/inscription", data={"nom": "Rasoa", "prenom": "Cedrick", "code": "1234", "code2": "1234", "niveau": "1", "jour": "5", "creneau": str(s14)})
+ok(r.status_code == 302 and con.execute("SELECT 1 FROM demandes WHERE nom='Rasoa Cedrick' AND creneau_id=? AND statut='attente'", (s14,)).fetchone() is not None, "Nom + Prénom → demande « Rasoa Cedrick » envoyée au bon cours")
 print("\nTOUS LES TESTS SONT PASSÉS")
