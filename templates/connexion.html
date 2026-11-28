@@ -19,9 +19,9 @@
     <h2 style="font-size:28px;color:var(--nuit)">Je me connecte</h2>
     {% if erreur %}<div class="erreur">{{ erreur }}</div>{% endif %}
     <label for="identifiant">Mon nom et prénom (ou mon identifiant)</label>
-    <input type="text" id="identifiant" name="identifiant" placeholder="ex. Rakoto Andry" required spellcheck="false" autocomplete="off">
+    <input type="text" id="identifiant" name="identifiant" data-lpignore="true" data-1p-ignore placeholder="ex. Rakoto Andry" required spellcheck="false" autocomplete="off">
     <label for="code">Mon code secret (4 chiffres)</label>
-    <input class="code" type="password" id="code" name="code" inputmode="numeric" maxlength="4" placeholder="••••" required>
+    <input class="code" type="password" id="code" name="code" inputmode="numeric" maxlength="4" placeholder="••••" required autocomplete="one-time-code" data-lpignore="true" data-1p-ignore>
     <button class="btn" type="submit">Entrer ➜</button>
     <p class="aide">Tu as oublié ton code ? Demande-le à ton animateur.</p>
     {% if inscriptions %}<div class="nouveau-compte"><b>Première fois ici ?</b><a class="btn bleu" href="{{ url_for('inscription') }}">Je demande mon inscription ✨</a></div>{% endif %}

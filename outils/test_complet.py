@@ -360,4 +360,12 @@ ok("nom de famille" in r and 'id="erreur"' in r and 'value="Cedrick"' in r, "nom
 cli = A.app.test_client()
 r = cli.post("/inscription", data={"nom": "Rasoa", "prenom": "Cedrick", "code": "1234", "code2": "1234", "niveau": "1", "jour": "5", "creneau": str(s14)})
 ok(r.status_code == 302 and con.execute("SELECT 1 FROM demandes WHERE nom='Rasoa Cedrick' AND creneau_id=? AND statut='attente'", (s14,)).fetchone() is not None, "Nom + Prénom → demande « Rasoa Cedrick » envoyée au bon cours")
+# ---- code secret : 1904 accepté (espaces, chiffres d'un autre clavier), message clair sinon
+cli = A.app.test_client()
+r = cli.post("/inscription", data={"nom": "Rabe", "prenom": "Fanja", "code": " 19 04 ", "code2": "１９０４", "niveau": "1", "jour": "5", "creneau": str(s14)})
+ok(r.status_code == 302 and con.execute("SELECT code FROM demandes WHERE nom='Rabe Fanja'").fetchone()[0] == "1904", "code « 1904 » accepté (avec espaces ou chiffres d'un autre clavier)")
+r = A.app.test_client().post("/inscription", data={"nom": "Rabe", "prenom": "Hery", "code": "Toky2026!", "code2": "1904", "niveau": "1", "jour": "5", "creneau": str(s14)}).get_data(as_text=True)
+ok("9 caractère(s)" in r, "mot de passe collé par Chrome : le message dit combien de caractères il y avait")
+pi = A.app.test_client().get("/inscription").get_data(as_text=True)
+ok('type="password"' not in pi, "à l'inscription, Chrome ne peut plus remplir le code avec un mot de passe enregistré")
 print("\nTOUS LES TESTS SONT PASSÉS")

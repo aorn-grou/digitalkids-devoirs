@@ -15,10 +15,10 @@
   </div>
 
   <div class="etape-ins"><span class="num">2</span><label for="code">Je choisis mon code secret (4 chiffres)</label></div>
-  <p class="aide" style="margin:0">Choisis 4 chiffres faciles à retenir pour toi. Ne le dis à personne : c'est ta clé pour entrer.</p>
+  <p class="aide" style="margin:0">Choisis 4 chiffres faciles à retenir et <b>écris-les sur ton cahier</b>. Ne le dis à personne : c'est ta clé pour entrer.</p>
   <div class="deux">
-    <input class="code" type="password" id="code" name="code" inputmode="numeric" maxlength="4" placeholder="••••" aria-label="Code secret">
-    <input class="code" type="password" id="code2" name="code2" inputmode="numeric" maxlength="4" placeholder="encore" aria-label="Le même code encore une fois">
+    <input class="code" type="text" id="code" name="code" inputmode="numeric" maxlength="4" placeholder="ex. 1904" autocomplete="off" data-lpignore="true" data-1p-ignore aria-label="Code secret" oninput="this.value=this.value.replace(/\D/g,'')">
+    <input class="code" type="text" id="code2" name="code2" inputmode="numeric" maxlength="4" placeholder="encore" autocomplete="off" data-lpignore="true" data-1p-ignore aria-label="Le même code encore une fois" oninput="this.value=this.value.replace(/\D/g,'')">
   </div>
 
 {% if creneaux %}

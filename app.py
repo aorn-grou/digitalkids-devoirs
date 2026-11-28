@@ -248,6 +248,20 @@ def nouvel_identifiant(prenom):
     return f"{base}{secrets.randbelow(10000)}"
 
 
+def chiffres(v):
+    """Garde seulement les chiffres, quel que soit le clavier (chiffres arabes, pleine largeur…), sans espaces."""
+    out = ""
+    for ch in str(v or ""):
+        if ch.isdigit():
+            try:
+                out += str(unicodedata.digit(ch))
+            except (TypeError, ValueError):
+                pass
+        elif not ch.isspace():
+            out += ch
+    return out
+
+
 def nouveau_code():
     return f"{random.randint(0, 9999):04d}"
 
@@ -485,7 +499,7 @@ def connexion():
     erreur = None
     if request.method == "POST":
         nom = request.form.get("identifiant", "").strip()
-        code = request.form.get("code", "").strip()
+        code = chiffres(request.form.get("code", ""))
         tentatives = session.get("tentatives", 0)
         if tentatives >= 8:
             erreur = "Trop d'essais. Demande de l'aide à l'animateur."
@@ -522,8 +536,8 @@ def inscription():
     if request.method == "POST":
         nom_famille = re.sub(r"\s+", " ", request.form.get("nom", "")).strip()
         nom = re.sub(r"\s+", " ", (nom_famille + " " + request.form.get("prenom", "")).strip()).strip()[:60]
-        code = request.form.get("code", "").strip()
-        code2 = request.form.get("code2", "").strip()
+        code = chiffres(request.form.get("code", ""))
+        code2 = chiffres(request.form.get("code2", ""))
         niveau = request.form.get("niveau", "")
         cr = creneau(request.form.get("creneau", ""))
         classe = request.form.get("classe", "")
@@ -536,7 +550,8 @@ def inscription():
         elif len(nom) < 2:
             erreur = "Écris ton nom et ton prénom (exemple : Rakoto Andry)."
         elif not re.fullmatch(r"\d{4}", code):
-            erreur = "Ton code secret doit avoir exactement 4 chiffres."
+            erreur = ("Ton code secret doit avoir exactement 4 chiffres"
+                      + (f" (la case contenait {len(code)} caractère(s) : efface-la complètement et réécris tes 4 chiffres)." if code else "."))
         elif code != code2:
             erreur = "Les deux codes ne sont pas pareils. Recommence."
         elif not cr and not classe_ok:
